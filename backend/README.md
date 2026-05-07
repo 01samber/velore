@@ -57,3 +57,15 @@ Health:
 - `GET /api/v1/loyalty/points` and `POST /api/v1/loyalty/redeem` require a **customer JWT**.
 - `POST /api/v1/loyalty/award` and `GET /api/v1/loyalty/:userId` require an **admin JWT**.
 
+## Demo seed data (for storefront demos)
+
+This repo includes realistic demo content for the storefront UI.
+
+Run:
+
+```bash
+npx prisma db seed
+```
+
+What it seeds and demo credentials are documented in `docs/seed-data-report.md`.
+

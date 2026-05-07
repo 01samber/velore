@@ -69,14 +69,34 @@ app.use('/api/v1/orders', require('./features/orders/order.routes'))
 
 app.get('/api/v1/test-db', async (req, res) => {
   try {
-    const userCount = await prisma.users.count()
-    const roleCount = await prisma.role.count()
+    const [
+      userCount,
+      roleCount,
+      productCount,
+      categoryCount,
+      brandCount,
+      blogCount,
+      reviewCount
+    ] = await Promise.all([
+      prisma.users.count(),
+      prisma.role.count(),
+      prisma.products.count(),
+      prisma.categories.count(),
+      prisma.brands.count(),
+      prisma.blog_posts.count({ where: { is_published: true } }),
+      prisma.reviews.count({ where: { status: 'approved' } })
+    ])
     res.json({
       success: true,
       message: 'Database connected!',
       data: {
         users: userCount,
-        roles: roleCount
+        roles: roleCount,
+        products: productCount,
+        categories: categoryCount,
+        brands: brandCount,
+        blogs: blogCount,
+        reviews: reviewCount
       }
     })
   } catch (error) {
