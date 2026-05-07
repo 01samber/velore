@@ -22,10 +22,15 @@ const rbac = {
     return (req, res, next) => {
       const role = req.admin?.role
       if (!role) {
-        return res.status(403).json({ success: false, error: 'Access denied' })
+        return res.status(403).json({ success: false, message: 'Access denied', errors: [], error: 'Access denied' })
       }
       if (!this.hasPermission(role, permission)) {
-        return res.status(403).json({ success: false, error: 'Missing permission: ' + permission })
+        return res.status(403).json({
+          success: false,
+          message: 'Missing permission: ' + permission,
+          errors: [],
+          error: 'Missing permission: ' + permission
+        })
       }
       next()
     }
@@ -33,7 +38,12 @@ const rbac = {
 
   requireSuperAdmin(req, res, next) {
     if (req.admin?.role !== 'super_admin') {
-      return res.status(403).json({ success: false, error: 'Super admin access required' })
+      return res.status(403).json({
+        success: false,
+        message: 'Super admin access required',
+        errors: [],
+        error: 'Super admin access required'
+      })
     }
     next()
   }

@@ -1,5 +1,13 @@
 const adminService = require('./admin.service')
 
+function jsonSuccess(res, data, message = null) {
+  return res.json({ success: true, message, data })
+}
+
+function jsonError(res, status, message, errors = []) {
+  return res.status(status).json({ success: false, message, errors })
+}
+
 const adminController = {
 
   // ─── Auth ──────────────────────────────────────────────────
@@ -8,21 +16,21 @@ const adminController = {
     try {
       const { email, password } = req.body
       if (!email || !password)
-        return res.status(400).json({ success: false, error: 'Email and password required' })
+        return jsonError(res, 400, 'Email and password required')
 
       const result = await adminService.login(email, password)
-      res.json({ success: true, data: result })
+      return jsonSuccess(res, result, 'Logged in')
     } catch (error) {
-      res.status(401).json({ success: false, error: error.message })
+      return jsonError(res, 401, error.message)
     }
   },
 
   async createAdmin(req, res) {
     try {
       const result = await adminService.createAdmin(req.admin.adminId, req.body)
-      res.status(201).json({ success: true, data: result })
+      return res.status(201).json({ success: true, message: 'Admin created', data: result })
     } catch (error) {
-      res.status(400).json({ success: false, error: error.message })
+      return jsonError(res, 400, error.message)
     }
   },
 
@@ -31,9 +39,9 @@ const adminController = {
   async getDashboard(req, res) {
     try {
       const data = await adminService.getDashboardStats()
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message })
+      return jsonError(res, 500, error.message)
     }
   },
 
@@ -48,36 +56,36 @@ const adminController = {
         search,
         is_active: is_active !== undefined ? is_active === 'true' : undefined
       })
-      res.json({ success: true, ...data })
+      return res.json({ success: true, message: null, ...data, errors: [] })
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message })
+      return jsonError(res, 500, error.message)
     }
   },
 
   async getUser(req, res) {
     try {
       const data = await adminService.getUserById(req.params.userId)
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(404).json({ success: false, error: error.message })
+      return jsonError(res, 404, error.message)
     }
   },
 
   async toggleUserStatus(req, res) {
     try {
       const data = await adminService.toggleUserStatus(req.admin.adminId, req.params.userId)
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(400).json({ success: false, error: error.message })
+      return jsonError(res, 400, error.message)
     }
   },
 
   async deleteUser(req, res) {
     try {
       const data = await adminService.deleteUser(req.admin.adminId, req.params.userId)
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(400).json({ success: false, error: error.message })
+      return jsonError(res, 400, error.message)
     }
   },
 
@@ -92,27 +100,27 @@ const adminController = {
         search,
         is_active: is_active !== undefined ? is_active === 'true' : undefined
       })
-      res.json({ success: true, ...data })
+      return res.json({ success: true, message: null, ...data, errors: [] })
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message })
+      return jsonError(res, 500, error.message)
     }
   },
 
   async toggleProductStatus(req, res) {
     try {
       const data = await adminService.toggleProductStatus(req.admin.adminId, req.params.productId)
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(400).json({ success: false, error: error.message })
+      return jsonError(res, 400, error.message)
     }
   },
 
   async deleteProduct(req, res) {
     try {
       const data = await adminService.deleteProduct(req.admin.adminId, req.params.productId)
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(400).json({ success: false, error: error.message })
+      return jsonError(res, 400, error.message)
     }
   },
 
@@ -122,18 +130,18 @@ const adminController = {
     try {
       const { page, limit, status } = req.query
       const data = await adminService.getAllOrders({ page, limit, status })
-      res.json({ success: true, ...data })
+      return res.json({ success: true, message: null, ...data, errors: [] })
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message })
+      return jsonError(res, 500, error.message)
     }
   },
 
   async updateOrderStatus(req, res) {
     try {
       const data = await adminService.updateOrderStatus(req.admin.adminId, req.params.orderId, req.body.status)
-      res.json({ success: true, data })
+      return jsonSuccess(res, data)
     } catch (error) {
-      res.status(400).json({ success: false, error: error.message })
+      return jsonError(res, 400, error.message)
     }
   },
 
@@ -142,18 +150,18 @@ const adminController = {
   async getAuditLogs(req, res) {
     try {
       const data = await adminService.getAuditLogs(req.query)
-      res.json({ success: true, ...data })
+      return res.json({ success: true, message: null, ...data, errors: [] })
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message })
+      return jsonError(res, 500, error.message)
     }
   },
 
   async getAdmins(req, res) {
     try {
       const data = await adminService.getAdmins();
-      res.json({ success: true, data });
+      return jsonSuccess(res, data);
     } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
+      return jsonError(res, 500, error.message);
     }
   }
 }

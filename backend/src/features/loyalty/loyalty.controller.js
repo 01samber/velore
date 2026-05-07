@@ -4,90 +4,93 @@ const {
   getLoyaltyInfo,
 } = require("./loyalty.service");
 
-// GET /loyalty/:userId
+function jsonSuccess(res, data, message = null) {
+  return res.json({ success: true, message, data });
+}
+
+function jsonError(res, status, message, errors = []) {
+  return res.status(status).json({ success: false, message, errors });
+}
+
+// GET /api/v1/loyalty/:userId (admin-only)
 async function getLoyalty(req, res) {
   try {
     const userId = BigInt(req.params.userId);
     const data = await getLoyaltyInfo(userId);
-    res.json({ success: true, data });
+    return jsonSuccess(res, data);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return jsonError(res, 500, error.message);
   }
 }
 
-// POST /loyalty/award
+// GET /api/v1/loyalty/points (customer-auth: current user)
+async function getMyLoyalty(req, res) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return jsonError(res, 401, 'Unauthorized');
+    const data = await getLoyaltyInfo(BigInt(userId));
+    return jsonSuccess(res, data);
+  } catch (error) {
+    return jsonError(res, 500, error.message);
+  }
+}
+
+// POST /api/v1/loyalty/award (admin-only)
 // Body: { userId, orderId }
 async function awardPoints(req, res) {
   try {
-    const userId = BigInt(req.body.userId);
-    const orderId = BigInt(req.body.orderId);
+    const { userId: rawUserId, orderId: rawOrderId } = req.body || {};
+    if (!rawUserId || !rawOrderId) {
+      return jsonError(res, 400, 'userId and orderId are required');
+    }
+    const userId = BigInt(rawUserId);
+    const orderId = BigInt(rawOrderId);
 
     const result = await checkAndAwardPoints(userId, orderId);
 
     if (result.awarded) {
-      res.json({
-        success: true,
-        message: `🎉 ${result.pointsEarned} points awarded for reaching ${result.totalOrders} orders!`,
-        data: result,
-      });
+      return jsonSuccess(
+        res,
+        result,
+        `${result.pointsEarned} points awarded for reaching ${result.totalOrders} delivered orders`
+      );
     } else {
-      res.json({
-        success: true,
-        message: "No milestone reached yet, keep ordering!",
-        data: result,
-      });
+      return jsonSuccess(res, result, "No milestone reached yet");
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return jsonError(res, 500, error.message);
   }
 }
 
-// POST /loyalty/redeem
-// Body: { userId, orderId, pointsToRedeem }
+// POST /api/v1/loyalty/redeem (customer-auth: current user)
+// Body: { orderId, pointsToRedeem }
 async function redeemUserPoints(req, res) {
   try {
-    const userId = BigInt(req.body.userId);
-    const orderId = BigInt(req.body.orderId);
-    const pointsToRedeem = parseInt(req.body.pointsToRedeem);
+    const userId = req.user?.userId;
+    if (!userId) return jsonError(res, 401, 'Unauthorized');
+
+    const { orderId: rawOrderId, pointsToRedeem: rawPoints } = req.body || {};
+    if (!rawOrderId || rawPoints === undefined) {
+      return jsonError(res, 400, 'orderId and pointsToRedeem are required');
+    }
+
+    const orderId = BigInt(rawOrderId);
+    const pointsToRedeem = parseInt(rawPoints);
 
     if (!pointsToRedeem || pointsToRedeem <= 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid points amount" });
+      return jsonError(res, 400, "Invalid points amount");
     }
 
-    const result = await redeemPoints(userId, orderId, pointsToRedeem);
+    const result = await redeemPoints(BigInt(userId), orderId, pointsToRedeem);
 
-    res.json({
-      success: true,
-      message: `✅ Redeemed ${result.pointsRedeemed} points for $${result.discountApplied} off!`,
-      data: result,
-    });
+    return jsonSuccess(
+      res,
+      result,
+      `Redeemed ${result.pointsRedeemed} points for $${result.discountApplied} off`
+    );
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    return jsonError(res, 400, error.message);
   }
 }
 
-async function getLoyaltyByToken(req, res) {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    const token = authHeader.split(' ')[1];
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId || decoded.user_id || decoded.id;
-    
-    if (!userId) {
-      return res.status(400).json({ success: false, message: 'User ID not found in token' });
-    }
-
-    const data = await getLoyaltyInfo(BigInt(userId));
-    res.json({ success: true, data });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-}
-
-module.exports = { getLoyalty, getLoyaltyByToken, awardPoints, redeemUserPoints };
+module.exports = { getLoyalty, getMyLoyalty, awardPoints, redeemUserPoints };
