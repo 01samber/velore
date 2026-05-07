@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import loginPhoto from "../../assets/loginphoto.jpg";
 import authService from "./authService";
-import cartService from "../cart/cartService";
+import { extractApiError } from "../../shared/services/apiHelpers";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -41,23 +41,10 @@ export default function Login() {
 
     try {
       await authService.login({ email, password });
-
-      // Merge guest cart
-      const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-      if (guestCart.length > 0) {
-        for (const item of guestCart) {
-          try {
-            await cartService.addItem({ productId: item.productId, quantity: item.quantity });
-          } catch (err) {
-            console.error('Failed to merge cart item:', err);
-          }
-        }
-        localStorage.removeItem('guestCart');
-      }
-
       navigate('/');
     } catch (err) {
-      setError(err.error || "Invalid email or password");
+      const apiErr = extractApiError(err, "Invalid email or password");
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }

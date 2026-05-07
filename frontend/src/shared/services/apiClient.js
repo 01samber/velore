@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAdminToken, clearCustomerToken, extractApiError, getAdminToken, getCustomerToken } from './apiHelpers'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
@@ -8,8 +9,8 @@ const apiClient = axios.create({
   timeout: 30000
 })
 
-/** Routes that must send the admin JWT (not the customer token). */
-function shouldUseAdminToken(config) {
+/** True if request is for admin-only API routes. */
+function isAdminApiRequest(config) {
   const raw = config.url || ''
   const path = raw.split('?')[0]
   const method = (config.method || 'get').toLowerCase()
@@ -28,9 +29,7 @@ function shouldUseAdminToken(config) {
 // Request interceptor - attach token
 apiClient.interceptors.request.use(
   (config) => {
-    const adminToken = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token')
-    const userToken = localStorage.getItem('token') || sessionStorage.getItem('token')
-    const token = shouldUseAdminToken(config) ? (adminToken || userToken) : (userToken || adminToken)
+    const token = isAdminApiRequest(config) ? getAdminToken() : getCustomerToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -43,31 +42,33 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    const status = error.response?.status
     const cfg = error.config || {}
-    const adminRequest = shouldUseAdminToken(cfg)
+    const adminRequest = isAdminApiRequest(cfg)
+    const status = error.response?.status
+    const path = (cfg.url || '').split('?')[0]
+    const isLoginAttempt = path === '/admin/login' || path === '/auth/login'
 
-    if (status === 401) {
-      const path = (cfg.url || '').split('?')[0]
-      const isLoginAttempt = path === '/admin/login' || path === '/auth/login'
-      if (isLoginAttempt) {
-        return Promise.reject(error.response?.data || error)
-      }
+    // Normalize error for UI
+    const normalized = extractApiError(error)
+
+    // Clean 401/403 handling without cross-logging-out.
+    if ((status === 401 || status === 403) && !isLoginAttempt) {
       if (adminRequest) {
-        localStorage.removeItem('admin_token')
+        clearAdminToken()
         localStorage.removeItem('velore_admin_user')
-        if (!window.location.pathname.startsWith('/admin/login')) {
-          window.location.href = '/admin/login'
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/admin/login')) {
+          window.location.assign('/admin/login')
         }
       } else {
-        localStorage.removeItem('token')
-        sessionStorage.removeItem('token')
+        clearCustomerToken()
         localStorage.removeItem('user')
-        localStorage.removeItem('guestCart')
-        window.location.href = '/login'
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.assign('/login')
+        }
       }
     }
-    return Promise.reject(error.response?.data || error)
+
+    return Promise.reject(normalized)
   }
 )
 

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useFavorites } from '../../contexts'
 import cartService from "../../../features/cart/cartService";
+import { extractApiError } from '../../services/apiHelpers'
 
 export default function EyewearCard({ id, productId, product_id, image, name, price, description, colors }) {
   const { toggleFavorite, isFavorite } = useFavorites()
   const [addingToCart, setAddingToCart] = useState(false)
+  const [error, setError] = useState(null)
   
   const productIdFinal = product_id || productId || id
   const favorited = isFavorite(productIdFinal)
@@ -43,6 +45,7 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
   
   // ✅ Logged in: ONLY API
   setAddingToCart(true)
+  setError(null)
   try {
     await cartService.addItem({
       productId: Number(productIdFinal),
@@ -53,7 +56,8 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
     btn.textContent = 'Added!'
     setTimeout(() => { btn.textContent = 'Add to cart' }, 1000)
   } catch (error) {
-    console.error('Failed to add to cart:', error)
+    const apiErr = extractApiError(error, 'Failed to add to cart')
+    setError(apiErr.message)
   } finally {
     setAddingToCart(false)
   }
@@ -115,6 +119,12 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
           </svg>
         </button>
       </div>
+
+      {error && (
+        <div className="px-3 md:px-4 pb-3 text-xs text-red-700">
+          {error}
+        </div>
+      )}
     </div>
   )
 }

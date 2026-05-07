@@ -1,6 +1,8 @@
 // src/components/ui/ContactModal.jsx
 import { useState } from 'react'
 import { X, Mail, Phone, MapPin, Send } from 'lucide-react'
+import apiClient from '../../services/apiClient'
+import { extractApiError, isApiSuccess } from '../../services/apiHelpers'
 
 export default function ContactModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
@@ -30,13 +32,10 @@ export default function ContactModal({ isOpen, onClose }) {
   setLoading(true)
 
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/contact`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    })
-
-    if (!res.ok) throw new Error('Failed to send message.')
+    const result = await apiClient.post('/contact', formData)
+    if (!isApiSuccess(result)) {
+      throw extractApiError({ response: { status: 400, data: result } }, result?.message || 'Failed to send message.')
+    }
 
     setSubmitted(true)
     setTimeout(() => {
@@ -45,8 +44,9 @@ export default function ContactModal({ isOpen, onClose }) {
       onClose()
     }, 2000)
   } catch (err) {
-    console.error(err)
-    setError('Something went wrong. Please try again.')
+    const apiErr = extractApiError(err, 'Something went wrong. Please try again.')
+    console.error(apiErr)
+    setError(apiErr.message)
   } finally {
     setLoading(false)
   }

@@ -1,19 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ChevronLeft, Calendar, User, Clock, Tag } from 'lucide-react'
 import apiClient from '../../shared/services/apiClient'
+import { extractApiError } from '../../shared/services/apiHelpers'
 
 export default function BlogPost() {
   const { id } = useParams()
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await apiClient.get(`/blogs/${id}`)
+      setPost(res?.data || null)
+    } catch (e) {
+      const apiErr = extractApiError(e, 'Failed to load blog post')
+      setError(apiErr.message)
+      setPost(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
 
   useEffect(() => {
-    apiClient.get(`/blogs/${id}`)
-      .then(res => setPost(res?.data || null))
-      .catch(() => setPost(null))
-      .finally(() => setLoading(false))
-  }, [id])
+    load()
+  }, [load])
 
   if (loading) {
     return (
@@ -27,7 +41,16 @@ export default function BlogPost() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">Blog post not found</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">
+            {error ? 'Failed to load blog post' : 'Blog post not found'}
+          </h1>
+          {error && (
+            <>
+              <p className="text-sm text-red-600 mb-4">{error}</p>
+              <button onClick={load} className="text-gray-900 underline mb-4">Retry</button>
+              <div />
+            </>
+          )}
           <Link to="/blogs" className="text-gray-600 hover:text-gray-900 underline">
             View all blogs
           </Link>

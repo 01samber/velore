@@ -1,10 +1,9 @@
 import apiClient from '../../shared/services/apiClient'
 import cartService from '../cart/cartService'
-import favoriteService from '../favorite/favoriteService'
+import { clearCustomerToken, extractApiError, isApiSuccess, setCustomerToken } from '../../shared/services/apiHelpers'
 
-const clearStorage = () => {
-  localStorage.removeItem('token')
-  sessionStorage.removeItem('token')
+const clearCustomerStorage = () => {
+  clearCustomerToken()
   localStorage.removeItem('user')
   localStorage.removeItem('guestCart')
   localStorage.removeItem('guestFavorites')
@@ -20,6 +19,7 @@ const mergeGuestCart = async () => {
           quantity: item.quantity || 1
         })
       } catch (err) {
+        // Don't block login on partial cart merge failures.
         console.error('Failed to merge guest cart item:', item, err)
       }
     }
@@ -29,36 +29,49 @@ const mergeGuestCart = async () => {
 
 const authService = {
   login: async (data) => {
-    clearStorage()
-    const result = await apiClient.post('/auth/login', data)
-    if (!result?.success) {
-      throw new Error(result?.message || 'Login failed')
+    try {
+      clearCustomerStorage()
+      const result = await apiClient.post('/auth/login', data)
+
+      if (!isApiSuccess(result)) {
+        throw extractApiError({ response: { status: 400, data: result } }, 'Login failed')
+      }
+
+      const token = result?.data?.token
+      if (!token) {
+        throw { isApiError: true, status: 500, message: 'Login succeeded but no token was returned.', errors: [], raw: result }
+      }
+
+      setCustomerToken(token, { persist: true })
+
+      if (result?.data?.user) {
+        localStorage.setItem('user', JSON.stringify(result.data.user))
+      }
+
+      // Merge guest cart into API cart (best-effort).
+      await mergeGuestCart()
+
+      return result
+    } catch (err) {
+      throw extractApiError(err, 'Login failed')
     }
-
-    localStorage.setItem('token', result.data.token)
-    localStorage.setItem('user', JSON.stringify(result.data.user))
-
-    // Merge guest cart into API cart
-    await mergeGuestCart()
-
-    // ✅ Reload the page so FavoritesContext re-mounts and loads from API
-    window.location.href = '/'
-    
-    return result
   },
 
   register: async (data) => {
-    clearStorage()
-    const result = await apiClient.post('/auth/register', data)
-    if (!result?.success) {
-      throw new Error(result?.message || 'Registration failed')
+    try {
+      clearCustomerStorage()
+      const result = await apiClient.post('/auth/register', data)
+      if (!isApiSuccess(result)) {
+        throw extractApiError({ response: { status: 400, data: result } }, 'Registration failed')
+      }
+      return result
+    } catch (err) {
+      throw extractApiError(err, 'Registration failed')
     }
-    return result
   },
 
   logout: () => {
-    clearStorage()
-    window.location.href = '/login'
+    clearCustomerStorage()
   },
 
   getProfile: () => apiClient.get('/auth/profile'),

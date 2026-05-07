@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Truck, Shield, RotateCcw, Tag, CheckCircle, X } from 'lucide-react'
 import cartService from '../cart/cartService'
 import orderService from './orderService'
+import { extractApiError } from '../../shared/services/apiHelpers'
 
 const COUNTRIES = ['Lebanon', 'United States', 'Canada', 'United Kingdom', 'France', 'UAE']
 const FREE_SHIPPING_THRESHOLD = 50
@@ -235,13 +236,12 @@ const buildOrderPayload = () => {
   const handleCODCheckout = async () => {
     setLoading(true)
     try {
-      const payload = buildOrderPayload()
-    console.log('Sending payload:', JSON.stringify(payload, null, 2))
       const { response, orderNumber } = await createOrder()
       setConfirmedOrder({ orderNumber, orderId: response?.data?.order_id })
       setShowCODModal(true)
     } catch (err) {
-      setError(err?.message || 'Checkout failed. Please try again.')
+      const apiErr = extractApiError(err, 'Checkout failed. Please try again.')
+      setError(apiErr.message)
     } finally {
       setLoading(false)
     }
@@ -251,8 +251,6 @@ const buildOrderPayload = () => {
   const handleWhishCheckout = async () => {
     setLoading(true)
     try {
-      const payload = buildOrderPayload()
-    console.log('Sending payload:', JSON.stringify(payload, null, 2))
       const { orderNumber } = await createOrder()
       const returnUrl = `${window.location.origin}/payment-success`
       const appUrl = `whish://pay?amount=${total.toFixed(2)}&currency=USD&orderId=${orderNumber}&callback=${encodeURIComponent(returnUrl)}`
@@ -260,7 +258,8 @@ const buildOrderPayload = () => {
       window.location.href = appUrl
       setTimeout(() => { window.location.href = webUrl }, 1500)
     } catch (err) {
-      setError(err?.message || 'Checkout failed. Please try again.')
+      const apiErr = extractApiError(err, 'Checkout failed. Please try again.')
+      setError(apiErr.message)
       setLoading(false)
     }
   }
@@ -269,17 +268,30 @@ const buildOrderPayload = () => {
   const handleCardCheckout = async () => {
     setLoading(true)
     try {
-      const payload = buildOrderPayload()
-    console.log('Sending payload:', JSON.stringify(payload, null, 2))
-      const { orderNumber } = await createOrder()
-      const returnUrl = encodeURIComponent(
-        `${window.location.origin}/payment-success?orderNumber=${orderNumber}&amount=${total.toFixed(2)}`
-      )
-      // ⚠️ Replace YOUR_STRIPE_PAYMENT_LINK with your real Stripe Payment Link from dashboard.stripe.com
-      const stripeUrl = `https://buy.stripe.com/YOUR_STRIPE_PAYMENT_LINK?prefilled_email=${encodeURIComponent(contactInfo.email)}&client_reference_id=${orderNumber}`
-      window.location.href = stripeUrl
+      const { response, orderNumber } = await createOrder()
+
+      // Backend must provide a checkout/payment URL for card flows. Do not use placeholders.
+      const checkoutUrl =
+        response?.data?.checkout_url ||
+        response?.data?.payment_url ||
+        response?.data?.url ||
+        null
+
+      if (!checkoutUrl) {
+        const msg = response?.message || 'Card payments are not configured yet.'
+        throw { isApiError: true, status: 400, message: msg, errors: response?.errors || [], raw: response }
+      }
+
+      // Optionally append returnUrl if backend supports it.
+      const returnUrl = `${window.location.origin}/payment-success?orderNumber=${encodeURIComponent(orderNumber)}&amount=${encodeURIComponent(total.toFixed(2))}`
+      const urlWithReturn = checkoutUrl.includes('returnUrl=')
+        ? checkoutUrl
+        : checkoutUrl + (checkoutUrl.includes('?') ? '&' : '?') + `returnUrl=${encodeURIComponent(returnUrl)}`
+
+      window.location.href = urlWithReturn
     } catch (err) {
-      setError(err?.message || 'Checkout failed. Please try again.')
+      const apiErr = extractApiError(err, 'Checkout failed. Please try again.')
+      setError(apiErr.message)
       setLoading(false)
     }
   }

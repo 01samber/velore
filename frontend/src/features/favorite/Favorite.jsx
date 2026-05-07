@@ -3,22 +3,26 @@ import { useFavorites } from '../../shared/contexts'  // ← FIXED
 import { EyewearCard } from '../../shared/components/eyewear'  // ← FIXED
 
 const Favorite = () => {
-  const { favorites, clearFavorites } = useFavorites()
+  const { favorites, clearFavorites, error, reloadFavorites } = useFavorites()
 
   return (
     <div className="px-6 md:px-16 py-12 min-h-screen">
-<div className="flex items-center justify-between mb-8">
-  <h1 className="text-2xl font-semibold">Your Favorites</h1>
-  <button
-    onClick={clearFavorites}
-    className="text-sm text-gray-400 hover:text-red-500 transition-colors underline"
-  >
-    Clear all
-  </button>
-</div>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-semibold">Your Favorites</h1>
+        <button
+          onClick={clearFavorites}
+          className="text-sm text-gray-400 hover:text-red-500 transition-colors underline"
+        >
+          Clear all
+        </button>
+      </div>
 
-
-
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-sm text-sm text-red-700 flex items-center justify-between gap-4">
+          <span className="min-w-0">{error}</span>
+          <button onClick={reloadFavorites} className="underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
 
       {favorites.length === 0 ? (
         <div className="text-center py-24">

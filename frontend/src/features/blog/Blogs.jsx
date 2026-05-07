@@ -1,17 +1,31 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import apiClient from '../../shared/services/apiClient'
+import { extractApiError } from '../../shared/services/apiHelpers'
 
 export default function Blogs() {
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    apiClient.get('/blogs')
-      .then(res => setBlogs(res?.data || []))
-      .catch(() => setBlogs([]))
-      .finally(() => setLoading(false))
+    load()
   }, [])
+
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await apiClient.get('/blogs')
+      setBlogs(Array.isArray(res?.data) ? res.data : [])
+    } catch (e) {
+      const apiErr = extractApiError(e, 'Failed to load blog posts')
+      setError(apiErr.message)
+      setBlogs([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -29,6 +43,11 @@ export default function Blogs() {
       <section className="px-6 md:px-16 py-16">
         {loading ? (
           <p className="text-center text-gray-500">Loading...</p>
+        ) : error ? (
+          <div className="text-center text-red-600 text-sm">
+            <p className="mb-3">{error}</p>
+            <button onClick={load} className="underline text-gray-900">Retry</button>
+          </div>
         ) : blogs.length === 0 ? (
           <p className="text-center text-gray-500">No blog posts yet.</p>
         ) : (

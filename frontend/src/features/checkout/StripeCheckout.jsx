@@ -5,7 +5,7 @@ import apiClient from '../../shared/services/apiClient'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
-function CheckoutForm({ amount, orderNumber, onSuccess, onError }) {
+function CheckoutForm({ amount, orderNumber, onSuccess }) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
@@ -94,24 +94,18 @@ function CheckoutForm({ amount, orderNumber, onSuccess, onError }) {
   )
 }
 
-export default function StripeCheckout({ amount, orderNumber, onSuccess, onError }) {
+export default function StripeCheckout({ amount, orderNumber, onSuccess }) {
   if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
-    // Fallback for demo mode
     return (
-      <div className="text-center p-4">
-        <button
-          onClick={() => onSuccess('demo_' + Date.now())}
-          className="w-full bg-gray-900 text-white py-3 text-sm font-medium hover:bg-gray-700 transition-colors rounded-sm"
-        >
-          [DEMO] Pay ${amount.toFixed(2)}
-        </button>
+      <div className="text-center p-4 text-sm text-gray-600">
+        Card payments are not configured yet.
       </div>
     )
   }
 
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutForm amount={amount} orderNumber={orderNumber} onSuccess={onSuccess} onError={onError} />
+      <CheckoutForm amount={amount} orderNumber={orderNumber} onSuccess={onSuccess} />
     </Elements>
   )
 }

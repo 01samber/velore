@@ -1,6 +1,6 @@
 // src/App.jsx - Updated for new feature-based structure
 import { useState, lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 
 // Layout Components (from shared/)
 import { Navbar, Footer, ScrollToTop } from './shared/components/layout'
@@ -33,6 +33,21 @@ const BlogPost = lazy(() => import('./features/blog/BlogPost'))
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+)
+
+const NotFound = () => (
+  <div className="min-h-screen bg-white flex items-center justify-center px-6">
+    <div className="text-center max-w-md">
+      <p className="text-xs tracking-widest text-gray-400 mb-3">404</p>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-2">Page not found</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        The page you’re looking for doesn’t exist or was moved.
+      </p>
+      <Link to="/" className="inline-block bg-gray-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-gray-700 transition-colors">
+        Back to home
+      </Link>
+    </div>
   </div>
 )
 
@@ -76,15 +91,18 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/shop" element={<Shop />} />
+                <Route path="/products" element={<Navigate to="/shop" replace />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/register" element={<Navigate to="/signup" replace />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/ai-advisor" element={<AIAdvisor />} />
                 <Route path="/favorite" element={<Favorite />} />
+                <Route path="/favorites" element={<Navigate to="/favorite" replace />} />
                 <Route path="/profile" element={<Profile />} />
 
                 <Route path="/blogs" element={
@@ -93,6 +111,8 @@ function App() {
                 <Route path="/blogs/:id" element={
                   <Suspense fallback={<PageLoader />}><BlogPost /></Suspense>
                 } />
+
+                <Route path="*" element={<NotFound />} />
               </Routes>
 
               <Footer />

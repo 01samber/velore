@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import signupPhoto from "../../assets/spimage.png";
 import authService from "./authService";
+import { extractApiError } from "../../shared/services/apiHelpers";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -79,7 +80,8 @@ export default function Signup() {
 
       navigate('/login');
     } catch (err) {
-      setError(err.error || "Registration failed. Please try again.");
+      const apiErr = extractApiError(err, "Registration failed. Please try again.");
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }

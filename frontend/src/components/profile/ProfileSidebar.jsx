@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { X, LogOut, Award, Clock, ChevronDown, ChevronUp, Heart, MessageCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import apiClient from '../../shared/services/apiClient'
+import { extractApiError, isApiSuccess } from '../../shared/services/apiHelpers'
 import ReviewForm from '../reviews/ReviewForm'
 
 export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpen, user: userProp }) {
@@ -9,20 +10,37 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
   const [orders, setOrders] = useState([])
   const [pointsData, setPointsData] = useState({ currentPoints: 0, transactions: [] })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [expandedOrder, setExpandedOrder] = useState(null)
   const [selectedReviewTarget, setSelectedReviewTarget] = useState(null)
 
   const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
-  const user = userProp || storedUser
+  const user = userProp || profile || storedUser
+
+  const loadProfile = async () => {
+    try {
+      setError(null)
+      const res = await apiClient.get('/auth/profile')
+      if (isApiSuccess(res) && res?.data) setProfile(res.data)
+    } catch (e) {
+      // If endpoint is missing or unauthorized, show readable message.
+      const apiErr = extractApiError(e, 'Failed to load profile')
+      setError(apiErr.message)
+      setProfile(null)
+    }
+  }
 
   const loadOrders = async () => {
     setLoading(true)
     try {
+      setError(null)
       const response = await apiClient.get('/orders')
-      const list = response?.data || response?.orders || response || []
+      const list = response?.data || []
       setOrders(Array.isArray(list) ? list : [])
     } catch (error) {
-      console.error('Failed to fetch orders', error)
+      const apiErr = extractApiError(error, 'Failed to fetch orders')
+      setError(apiErr.message)
       setOrders([])
     } finally {
       setLoading(false)
@@ -31,22 +49,28 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
 
   const loadPoints = async () => {
     try {
+      setError(null)
       const response = await apiClient.get('/loyalty/points')
-      const data = response?.data || response || {}
+      const data = response?.data || {}
       setPointsData({
         currentPoints: data.currentPoints || data.current_points || 0,
         transactions: data.transactions || []
       })
     } catch (error) {
-      console.error('Failed to fetch loyalty points', error)
+      const apiErr = extractApiError(error, 'Failed to fetch loyalty points')
+      setError(apiErr.message)
       setPointsData({ currentPoints: 0, transactions: [] })
     }
   }
 
   useEffect(() => {
     if (!isOpen) return
-    loadOrders()
-    loadPoints()
+    const t = setTimeout(() => {
+      loadProfile()
+      loadOrders()
+      loadPoints()
+    }, 0)
+    return () => clearTimeout(t)
   }, [isOpen])
 
   useEffect(() => {
@@ -110,6 +134,11 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-sm">
+              {error}
+            </div>
+          )}
           {activeTab === 'account' ? (
             <div className="space-y-4">
               <div>
@@ -171,7 +200,9 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                           <p className="text-sm font-medium text-gray-900">{tx.type || 'transaction'}</p>
                           <p className="text-sm font-medium text-gray-900">{tx.points > 0 ? '+' : ''}{tx.points} pts</p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">{new Date(tx.created_at || Date.now()).toLocaleString()}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}
+                        </p>
                       </div>
                     ))
                   )}
@@ -193,7 +224,9 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                     >
                       <div>
                         <p className="text-sm font-medium text-gray-900 mb-1">Order #{String(order.order_id || order.id)}</p>
-                        <p className="text-sm text-gray-600">Date: {new Date(order.order_date || order.created_at || order.createdAt || Date.now()).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-600">
+                          Date: {(order.order_date || order.created_at || order.createdAt) ? new Date(order.order_date || order.created_at || order.createdAt).toLocaleDateString() : '—'}
+                        </p>
                         <p className="text-sm text-gray-600">Status: {order.status || 'pending'}</p>
                         <p className="text-sm text-gray-600">Total: ${Number(order.total || order.total_price || order.amount || 0).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Points earned: +{Math.floor(Number(order.total || order.total_price || order.amount || 0) / 100) * 10}</p>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import shopService from "../shop/shopService"
 import cartService from "../cart/cartService"
 import sizeguide from '../../assets/sizeguide.png'
+import { extractApiError } from "../../shared/services/apiHelpers"
 function AccordionItem({ title, children }) {
   const [open, setOpen] = useState(false)
   return (
@@ -177,6 +178,8 @@ export default function ProductDetail() {
   const { id } = useParams()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
@@ -202,6 +205,7 @@ export default function ProductDetail() {
 
   const loadProduct = async () => {
     setLoading(true)
+    setError(null)
     try {
       const result = await shopService.getProduct(id)
       setProduct(result.data)
@@ -210,21 +214,10 @@ export default function ProductDetail() {
         setSelectedVariant(result.data.product_variants[0])
       }
     } catch (error) {
-      console.error('Failed to load product:', error)
-      try {
-        const allProducts = await shopService.getProducts()
-        const found = allProducts.data.find(p =>
-          p.product_id == id || p.productId == id || p.id == id
-        )
-        if (found) {
-          setProduct(found)
-          if (found?.product_variants?.length > 0) {
-            setSelectedVariant(found.product_variants[0])
-          }
-        } else setProduct(null)
-      } catch {
-        setProduct(null)
-      }
+      const apiErr = extractApiError(error, 'Failed to load product')
+      console.error('Failed to load product:', apiErr)
+      setError(apiErr.message)
+      setProduct(null)
     } finally {
       setLoading(false)
     }
@@ -233,25 +226,22 @@ export default function ProductDetail() {
 const handleAddToCart = async () => {
   const productId = product.product_id
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  setNotice(null)
 
   if (token) {
     setAddingToCart(true)
     try {
-      console.log('Sending to cart:', { 
-        productId, 
-        variantId: selectedVariant?.variant_id,
-        quantity,
-        prescriptionData: prescription
-      })
       await cartService.addItem({ 
         productId, 
         variantId: selectedVariant?.variant_id,
         quantity,
         prescriptionData: prescription
       })
-      alert('Added to cart!')
+      setNotice('Added to cart.')
     } catch (error) {
-      console.error('Failed to add to cart:', error)
+      const apiErr = extractApiError(error, 'Failed to add to cart')
+      console.error('Failed to add to cart:', apiErr)
+      setNotice(apiErr.message)
     } finally {
       setAddingToCart(false)
     }
@@ -273,7 +263,7 @@ const handleAddToCart = async () => {
       })
     }
     localStorage.setItem('guestCart', JSON.stringify(localCart))
-    alert('Added to cart!')
+    setNotice('Added to cart.')
   }
 }
 
@@ -282,7 +272,17 @@ const handleAddToCart = async () => {
   }
 
   if (!product) {
-    return <div className="p-10 text-sm text-gray-500">Product not found</div>
+    return (
+      <div className="p-10 text-sm">
+        <p className={error ? "text-red-600" : "text-gray-500"}>
+          {error || 'Product not found'}
+        </p>
+        <div className="mt-4 flex gap-3">
+          <button onClick={loadProduct} className="underline text-gray-900">Retry</button>
+          <Link to="/shop" className="underline text-gray-600">Back to shop</Link>
+        </div>
+      </div>
+    )
   }
 
   // ✅ Pull images from product_variants instead of non-existent product.image
@@ -310,6 +310,11 @@ const handleAddToCart = async () => {
 
   return (
     <div className="px-4 md:px-16 py-8 max-w-6xl mx-auto">
+      {notice && (
+        <div className="mb-6 p-3 bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-sm">
+          {notice}
+        </div>
+      )}
 
       {/* ── NEW: Size Guide Modal ── */}
       {sizeGuideOpen && <SizeGuideModal onClose={() => setSizeGuideOpen(false)} />}

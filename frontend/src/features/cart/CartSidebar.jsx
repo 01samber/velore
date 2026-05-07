@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { X, Minus, Plus, Trash2 } from 'lucide-react'
 import cartService from './cartService'
+import { clearCustomerToken, extractApiError } from '../../shared/services/apiHelpers'
 
 const FREE_SHIPPING_THRESHOLD = 50
 
@@ -102,19 +103,19 @@ export default function CartSidebar({ isOpen, onClose }) {
     setIsGuest(false)
     try {
       const response = await cartService.getCart()
-      const cartItems = response?.cart_items || response?.data?.cart_items || []
+      const cartItems = response?.data?.cart_items || []
       setItems(Array.isArray(cartItems) ? cartItems : [])
     } catch (error) {
-      console.error('Failed to load cart:', error)
-      if (error?.response?.status === 401) {
-        localStorage.removeItem('token')
-        sessionStorage.removeItem('token')
+      const apiErr = extractApiError(error, 'Failed to load cart')
+      console.error('Failed to load cart:', apiErr)
+      if (apiErr.status === 401 || apiErr.status === 403) {
+        clearCustomerToken()
         setIsGuest(true)
         const localCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
         setItems(localCart)
-      } else {
-        setItems([])
+        return
       }
+      setItems([])
     }
   }
 

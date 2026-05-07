@@ -6,12 +6,31 @@ import { EyewearCard } from '../../shared/components/eyewear'
 import sketchImage from '../../assets/Veloresketch.jpeg'
 import shopService from '../shop/shopService'
 import apiClient from '../../shared/services/apiClient'
+import { extractApiError } from '../../shared/services/apiHelpers'
 
 export default function Home() {
   const [newProducts, setNewProducts] = useState([])
   const [approvedReviews, setApprovedReviews] = useState([])
   const [blogs, setBlogs] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState(null)
+  const [reviewsError, setReviewsError] = useState(null)
+  const [blogsError, setBlogsError] = useState(null)
+
+  const normalizeCardProduct = (p) => {
+    const productId = p?.product_id ?? p?.id ?? p?.productId
+    const variants = Array.isArray(p?.product_variants) ? p.product_variants : []
+    const image = variants?.[0]?.images?.[0] || p?.image || 'https://via.placeholder.com/400'
+    const colors = variants?.map(v => v?.color_hex).filter(Boolean) || []
+    return {
+      ...p,
+      id: productId,
+      product_id: productId,
+      image,
+      colors,
+      price: Number(p?.price || 0),
+    }
+  }
 
   useEffect(() => {
     loadNewCollection()
@@ -20,17 +39,23 @@ export default function Home() {
   }, [])
 
   const loadNewCollection = async () => {
+    setProductsLoading(true)
+    setProductsError(null)
     try {
       const result = await shopService.getProducts({ limit: 5 })
-      setNewProducts((result?.data || []).slice(0, 5))
+      const list = Array.isArray(result?.data) ? result.data : (Array.isArray(result?.data?.products) ? result.data.products : [])
+      setNewProducts(list.slice(0, 5).map(normalizeCardProduct))
     } catch (error) {
-      console.error('Failed to load new collection:', error)
+      const apiErr = extractApiError(error, 'Failed to load products')
+      setProductsError(apiErr.message)
+      setNewProducts([])
     } finally {
-      setLoading(false)
+      setProductsLoading(false)
     }
   }
 
   const loadApprovedReviews = async () => {
+    setReviewsError(null)
     try {
       const result = await apiClient.get('/reviews/approved')
       const data = result?.data || []
@@ -43,12 +68,14 @@ export default function Home() {
         : []
       setApprovedReviews(mapped)
     } catch (error) {
-      console.error('Failed to load approved reviews:', error)
+      const apiErr = extractApiError(error, 'Failed to load reviews')
+      setReviewsError(apiErr.message)
       setApprovedReviews([])
     }
   }
 
   const loadBlogs = async () => {
+    setBlogsError(null)
     try {
       const result = await apiClient.get('/blogs')
       const data = result?.data || []
@@ -63,7 +90,8 @@ export default function Home() {
         : []
       setBlogs(mapped)
     } catch (error) {
-      console.error('Failed to load blogs:', error)
+      const apiErr = extractApiError(error, 'Failed to load blogs')
+      setBlogsError(apiErr.message)
       setBlogs([])
     }
   }
@@ -105,13 +133,20 @@ export default function Home() {
           </Link>
         </div>
 
-        {loading ? (
+        {productsLoading ? (
           <div className="text-center py-12 text-gray-400">Loading new collection...</div>
+        ) : productsError ? (
+          <div className="text-center py-12 text-sm">
+            <p className="text-red-600 mb-3">{productsError}</p>
+            <button onClick={loadNewCollection} className="underline text-gray-900">Retry</button>
+          </div>
+        ) : newProducts.length === 0 ? (
+          <div className="text-center py-12 text-gray-400 text-sm">No products yet.</div>
         ) : (
           <>
             {/* Mobile — horizontal scroll */}
             <div className="flex md:hidden gap-3 overflow-x-auto pb-4 scrollbar-hide">
-              {newProducts.map((product, index) => (
+              {newProducts.map((product) => (
                 <div key={product.product_id} className="w-[45vw] flex-shrink-0">
                   <EyewearCard {...product} />
                 </div>
@@ -152,7 +187,15 @@ export default function Home() {
       </section>
 
       {/* Testimonials, About us, Latest News — unchanged */}
-      {approvedReviews.length > 0 ? (
+      {reviewsError ? (
+        <section className="px-6 md:px-16 py-16">
+          <h2 className="text-2xl font-semibold mb-6">Testimonials</h2>
+          <div className="bg-red-50 border border-red-200 rounded-sm p-6 text-sm text-red-700 flex items-center justify-between gap-4">
+            <span className="min-w-0">{reviewsError}</span>
+            <button onClick={loadApprovedReviews} className="underline whitespace-nowrap">Retry</button>
+          </div>
+        </section>
+      ) : approvedReviews.length > 0 ? (
         <Testimonials testimonials={approvedReviews} />
       ) : (
         <section className="px-6 md:px-16 py-16">
@@ -180,6 +223,12 @@ export default function Home() {
 
       <section id="latest-news" className="px-6 md:px-16 py-16 scroll-mt-20">
         <h2 className="text-2xl font-semibold mb-8">Latest news</h2>
+        {blogsError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-sm text-sm text-red-700 flex items-center justify-between gap-4">
+            <span className="min-w-0">{blogsError}</span>
+            <button onClick={loadBlogs} className="underline whitespace-nowrap">Retry</button>
+          </div>
+        )}
         <div className="flex md:hidden gap-4 overflow-x-auto pb-4 scrollbar-hide">
           {blogs.map((blog) => (
             <Link key={blog.id} to={`/blogs/${blog.id}`} className="min-w-[70vw] flex-shrink-0 relative group overflow-hidden rounded-sm">

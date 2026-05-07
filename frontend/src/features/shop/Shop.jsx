@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { EyewearCard } from '../../shared/components/eyewear'
 import shopService from './shopService'
+import { extractApiError } from '../../shared/services/apiHelpers'
 
 const MAX_PRICE = 450
 const BRANDS = ['Velore', 'Ray-Ban', 'MIU MIU']
@@ -79,37 +80,99 @@ export default function Shop() {
   const [allProducts, setAllProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [brandOptions, setBrandOptions] = useState(BRANDS)
+  const [apiCategories, setApiCategories] = useState([])
 
   const activeCategory = searchParams.get('category') || 'all'
+  const searchQuery = searchParams.get('search') || ''
   const isLenses = activeCategory === 'lenses'
   const showFrameFilters = activeCategory === 'glasses' || activeCategory === 'sunglasses'
   const showFilterBtn = activeCategory !== 'all'
 
-  // ✅ NEW: Fetch products from backend
+  const normalizeProduct = (p) => {
+    const productId = p?.product_id ?? p?.id ?? p?.productId
+    const variants = Array.isArray(p?.product_variants) ? p.product_variants : (Array.isArray(p?.variants) ? p.variants : [])
+    const firstImage = variants?.[0]?.images?.[0] || p?.image || ''
+    const colors = variants?.map(v => v?.color_hex).filter(Boolean) || p?.colors || []
+    return {
+      ...p,
+      id: productId,
+      product_id: productId,
+      name: p?.name || '',
+      description: p?.description || '',
+      price: Number(p?.price || 0),
+      image: firstImage,
+      colors,
+      brand: p?.brands?.name || p?.brand || '',
+      gender: p?.gender || '',
+      isBundle: !!(p?.is_bundle ?? p?.isBundle),
+      size: p?.size || '',
+      frameShape: p?.frame_shape || p?.frameShape || '',
+      faceShape: p?.face_shape || p?.faceShape || '',
+      lensColor: p?.lens_color || p?.lensColor || '',
+      purpose: p?.purpose || '',
+      lensFeature: p?.lens_feature || p?.lensFeature || '',
+    }
+  }
+
+  const loadMeta = async () => {
+    try {
+      const [brandsRes, categoriesRes] = await Promise.all([
+        shopService.getBrands(),
+        shopService.getCategories(),
+      ])
+      const brands = Array.isArray(brandsRes?.data) ? brandsRes.data : []
+      const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : []
+
+      if (brands.length > 0) {
+        const names = brands.map(b => b?.name).filter(Boolean)
+        if (names.length > 0) setBrandOptions(names)
+      }
+      setApiCategories(categories)
+    } catch {
+      // Non-blocking: shop still works without meta.
+    }
+  }
+
+  // Fetch brands/categories once (if available)
+  useEffect(() => {
+    loadMeta()
+  }, [])
+
+  // Fetch products from backend when category/search/meta changes
   useEffect(() => {
     loadProducts(activeCategory)
-  }, [activeCategory])
+  }, [activeCategory, searchQuery, apiCategories])
 
-  const loadProducts = async (category) => {
+  const loadProducts = async () => {
   setLoading(true)
   setError(null)
   try {
     const params = {}
-    if (activeCategory !== 'all') {
-      const categoryMap = {
-        glasses: 1,
-        sunglasses: 2,
-        lenses: 4,
+    const normalizedCategoryKey = (activeCategory || '').toLowerCase()
+
+    // Prefer backend categories if available (avoid hardcoded IDs).
+    if (normalizedCategoryKey !== 'all' && Array.isArray(apiCategories) && apiCategories.length > 0) {
+      const match = apiCategories.find(c => (c?.name || '').toLowerCase().includes(normalizedCategoryKey))
+      if (match?.category_id || match?.id) {
+        params.category_id = match.category_id || match.id
       }
-      params.category_id = categoryMap[activeCategory]
     }
-    const response = await shopService.getProducts(params)
-console.log('API response:', response.data)  // ← add this
-setAllProducts(response.data)
+
+    let response
+    if (searchQuery && searchQuery.trim().length >= 2) {
+      response = await shopService.searchProducts(searchQuery.trim(), params)
+    } else {
+      response = await shopService.getProducts(params)
+    }
+
+    const data = response?.data
+    const list = Array.isArray(data) ? data : (Array.isArray(data?.products) ? data.products : [])
+    setAllProducts(list.map(normalizeProduct))
 
   } catch (err) {
-    setError('Failed to load products')
-    console.error('Shop error:', err)
+    const apiErr = extractApiError(err, 'Failed to load products')
+    setError(apiErr.message)
   } finally {
     setLoading(false)
   }
@@ -121,8 +184,7 @@ setAllProducts(response.data)
     setFilters(reset)
     setAppliedFilters(reset)
     setFilterOpen(false)
-        window.scrollTo(0, 0)  // ← add this
-
+    window.scrollTo(0, 0)
   }
 
   const toggle = (key, value) => {
@@ -288,7 +350,7 @@ setAllProducts(response.data)
               className="w-full accent-gray-900 mb-3"
             />
             <div className="flex gap-3">
-              {['priceMin', 'priceMax'].map((key, i) => (
+              {['priceMin', 'priceMax'].map((key) => (
                 <div key={key} className="flex items-center border border-gray-200 px-2 py-1.5 flex-1">
                   <span className="text-gray-400 text-sm mr-1">$</span>
                   <input
@@ -309,7 +371,7 @@ setAllProducts(response.data)
 
           {/* Brand */}
           <FilterSection title="Brand">
-            {BRANDS.map(b => <Checkbox key={b} label={b} checked={filters.brands.includes(b)} onChange={() => toggle('brands', b)} />)}
+            {brandOptions.map(b => <Checkbox key={b} label={b} checked={filters.brands.includes(b)} onChange={() => toggle('brands', b)} />)}
           </FilterSection>
 
           {/* ── Glasses / Sunglasses only ── */}

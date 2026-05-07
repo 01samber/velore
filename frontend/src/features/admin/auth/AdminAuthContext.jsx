@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import adminService from '../adminService'
+import { extractApiError } from '../../../shared/services/apiHelpers'
 
 const AdminAuthContext = createContext(null)
 
@@ -11,7 +12,7 @@ export function AdminAuthProvider({ children }) {
 
   // ─── Rehydrate from localStorage on mount ──────────────────────────────────
   useEffect(() => {
-    const storedToken = localStorage.getItem('token')
+    const storedToken = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token')
     const storedAdmin = localStorage.getItem('velore_admin_user')
     if (storedToken && storedAdmin) {
       try {
@@ -29,24 +30,25 @@ export function AdminAuthProvider({ children }) {
     setError(null)
     try {
       const res = await adminService.login(email, password)
-      // res is already unwrapped by apiClient interceptor → res.data
       const { token: newToken, admin: adminData } = res.data
 
-      localStorage.setItem('token', newToken)
+      sessionStorage.setItem('admin_token', newToken)
       localStorage.setItem('velore_admin_user', JSON.stringify(adminData))
 
       setToken(newToken)
       setAdmin(adminData)
       return true
     } catch (err) {
-      setError(err.error || err.message || 'Login failed')
+      const apiErr = extractApiError(err, 'Login failed')
+      setError(apiErr.message)
       return false
     }
   }, [])
 
   // ─── Logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(() => {
-    localStorage.removeItem('token')
+    localStorage.removeItem('admin_token')
+    sessionStorage.removeItem('admin_token')
     localStorage.removeItem('velore_admin_user')
     setToken(null)
     setAdmin(null)

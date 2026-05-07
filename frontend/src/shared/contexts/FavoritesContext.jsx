@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import favoriteService from '../../features/favorite/favoriteService'
+import { extractApiError } from '../services/apiHelpers'
 
 const FavoritesContext = createContext()
 
 export function FavoritesProvider({ children }) {
   const [favorites, setFavorites] = useState([])
   const [toast, setToast] = useState(null)
+  const [error, setError] = useState(null)
 
   // ✅ Load favorites on mount and when reload is called
   const loadFavorites = useCallback(async () => {
@@ -14,6 +16,7 @@ export function FavoritesProvider({ children }) {
     if (token) {
       // ✅ Logged in: ONLY from API
       try {
+        setError(null)
         const result = await favoriteService.getFavorites()
         if (Array.isArray(result?.data)) {
           setFavorites(result.data.map(item => ({
@@ -29,11 +32,14 @@ export function FavoritesProvider({ children }) {
           setFavorites([])
         }
       } catch (error) {
-        console.error('Failed to load favorites:', error)
+        const apiErr = extractApiError(error, 'Failed to load favorites')
+        console.error('Failed to load favorites:', apiErr)
+        setError(apiErr.message)
         setFavorites([])
       }
     } else {
       // ✅ Guest: ONLY from localStorage
+      setError(null)
       const guestFavorites = JSON.parse(localStorage.getItem('guestFavorites') || '[]')
       setFavorites(guestFavorites)
     }
@@ -49,17 +55,13 @@ export function FavoritesProvider({ children }) {
     loadFavorites()
   }
 
-  const loadGuestFavorites = () => {
-    const guestFavorites = JSON.parse(localStorage.getItem('guestFavorites') || '[]')
-    setFavorites(guestFavorites)
-  }
-
   const toggleFavorite = async (product) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     const exists = favorites.find(f => String(f.id) === String(product.id))
     
     if (token) {
       try {
+        setError(null)
         if (exists) {
           await favoriteService.removeFavorite(product.id)
         } else {
@@ -68,7 +70,9 @@ export function FavoritesProvider({ children }) {
         await loadFavorites()
         showToast(exists ? 'Removed from favorites' : 'Added to favorites!')
       } catch (error) {
-        console.error('Favorite toggle failed:', error)
+        const apiErr = extractApiError(error, 'Favorite action failed')
+        console.error('Favorite toggle failed:', apiErr)
+        setError(apiErr.message)
       }
     } else {
       let guestFavorites = JSON.parse(localStorage.getItem('guestFavorites') || '[]')
@@ -101,11 +105,14 @@ export function FavoritesProvider({ children }) {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     if (token) {
       try {
+        setError(null)
         for (const f of favorites) {
           await favoriteService.removeFavorite(f.id)
         }
       } catch (error) {
-        console.error('Failed to clear favorites:', error)
+        const apiErr = extractApiError(error, 'Failed to clear favorites')
+        console.error('Failed to clear favorites:', apiErr)
+        setError(apiErr.message)
       }
     }
     localStorage.removeItem('guestFavorites')
@@ -119,7 +126,7 @@ export function FavoritesProvider({ children }) {
   }
 
   return (
-    <FavoritesContext.Provider value={{ favorites, toggleFavorite, isFavorite, toast, clearFavorites, reloadFavorites }}>
+    <FavoritesContext.Provider value={{ favorites, toggleFavorite, isFavorite, toast, clearFavorites, reloadFavorites, error }}>
       {children}
     </FavoritesContext.Provider>
   )

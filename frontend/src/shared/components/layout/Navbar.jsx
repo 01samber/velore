@@ -5,16 +5,17 @@ import { Search, User, Heart, ShoppingCart, Menu, X } from "lucide-react";
 import { useFavorites } from "../../contexts";
 import apiClient from "../../../shared/services/apiClient";
 import ProfileSidebar from "../../../features/profile/ProfileSidebar";
+import { extractApiError } from "../../../shared/services/apiHelpers";
 
 export default function Navbar({ onCartOpen, onContactOpen }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [currency, setCurrency] = useState("USD");
-  const [rates, setRates] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -52,12 +53,7 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
     setScrolled(window.scrollY > 50);
   }, [location.pathname]);
 
-  useEffect(() => {
-    fetch("https://api.exchangerate-api.com/v4/latest/USD")
-      .then((res) => res.json())
-      .then((data) => setRates(data.rates))
-      .catch((err) => console.log(err));
-  }, []);
+  // Currency conversion rates can be added later when used in UI.
 
   const handleSearchClick = () => {
     if (!searchOpen) {
@@ -67,12 +63,14 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
       setSearchOpen(false);
       setSearchQuery("");
       setSearchResults([]);
+      setSearchError(null);
     }
   };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
+    setSearchError(null);
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -89,7 +87,8 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
         const result = await apiClient.get(`/products/search?q=${encodeURIComponent(value)}`);
         setSearchResults(result?.data || []);
       } catch (error) {
-        console.error("Search failed:", error);
+        const apiErr = extractApiError(error, "Search failed");
+        setSearchError(apiErr.message);
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -104,6 +103,7 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
       setSearchOpen(false);
       setSearchQuery("");
       setSearchResults([]);
+      setSearchError(null);
     }
   };
 
@@ -239,7 +239,7 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
 
               {searchOpen && searchQuery.length >= 2 && searchResults.length === 0 && !searchLoading && (
                 <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-sm shadow-lg z-50 p-4 text-center text-sm text-gray-500">
-                  No products found
+                  {searchError ? searchError : "No products found"}
                 </div>
               )}
             </div>

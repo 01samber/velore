@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import loginPhoto from "../../assets/loginphoto.jpg";
 import apiClient from "../../shared/services/apiClient";
+import { extractApiError, isApiSuccess } from "../../shared/services/apiHelpers";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -17,11 +18,15 @@ export default function ForgotPassword() {
     setError("");
 
     try {
-      await apiClient.post("/auth/forgot-password", { email });
-      setSubmitted(true);
+      const res = await apiClient.post("/auth/forgot-password", { email });
+      if (isApiSuccess(res)) {
+        setSubmitted(true);
+      } else {
+        setError(res?.message || "Failed to request password reset.");
+      }
     } catch (err) {
-      // If email was sent successfully but response parsing failed, still show success
-      setSubmitted(true);
+      const apiErr = extractApiError(err, "Failed to request password reset.");
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }
