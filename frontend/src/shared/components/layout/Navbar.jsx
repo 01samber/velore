@@ -17,11 +17,11 @@ import { useFavorites } from "../../contexts";
 import apiClient from "../../../shared/services/apiClient";
 import ProfileSidebar from "../../../features/profile/ProfileSidebar";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { CurrencyMenu } from "../ui";
 
 export default function Navbar({ onCartOpen, onContactOpen }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [currency, setCurrency] = useState("USD");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -184,15 +184,13 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
           </Link>
 
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className={`hidden md:block bg-transparent border-none text-xs cursor-pointer outline-none transition-colors ${isTransparent ? "text-white" : "text-gray-500"}`}
-            >
-              <option value="USD" className="text-gray-900 bg-white">UNITED STATES (USD $)</option>
-              <option value="EUR" className="text-gray-900 bg-white">EUROPE (EUR €)</option>
-              <option value="LBP" className="text-gray-900 bg-white">LEBANON (LBP ل.ل)</option>
-            </select>
+            <div className="hidden md:block">
+              <CurrencyMenu
+                ariaLabel="Select currency"
+                align="right"
+                triggerClassName={isTransparent ? 'text-white border-white/30 hover:bg-white/10' : ''}
+              />
+            </div>
 
             <div className="flex items-center relative search-container">
               <form onSubmit={handleSearchSubmit} className="flex items-center">
@@ -395,15 +393,13 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
               </Link>
             </div>
 
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className={`bg-transparent border-none text-xs cursor-pointer outline-none w-fit ${isTransparent ? "text-white" : "text-gray-500"}`}
-            >
-              <option value="USD" className="text-gray-900 bg-white">UNITED STATES (USD $)</option>
-              <option value="EUR" className="text-gray-900 bg-white">EUROPE (EUR €)</option>
-              <option value="LBP" className="text-gray-900 bg-white">LEBANON (LBP ل.ل)</option>
-            </select>
+            <div className="pt-1">
+              <CurrencyMenu
+                ariaLabel="Select currency"
+                align="left"
+                triggerClassName={isTransparent ? 'text-white border-white/30 hover:bg-white/10' : ''}
+              />
+            </div>
           </div>
         )}
       </nav>

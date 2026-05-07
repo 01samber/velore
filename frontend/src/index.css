@@ -98,6 +98,9 @@
   }
   .v-menu-item { @apply transition-colors; }
   .v-menu-item:hover { background: rgba(var(--velore-accent), 0.06); }
+  .v-menu-item[aria-current="true"] {
+    background: rgba(var(--velore-accent), 0.10);
+  }
 
   /* Buttons/forms */
   .v-btn-primary {

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Mail, MapPin, Phone } from 'lucide-react'
 import logo from '../../../assets/logoEye-blue.png'
+import { CurrencyMenu } from '../ui'
 
 export default function Footer() {
     return (
@@ -130,11 +131,8 @@ export default function Footer() {
                     </div>
                     <div className="text-xs text-gray-500">Payments available at checkout.</div>
                     <div className="flex gap-4 text-sm text-gray-600">
-                        <select className="border border-gray-300 px-2 py-1 text-sm outline-none">
-                            <option>United States (USD $)</option>
-                            <option>Lebanon (LBP)</option>
-                        </select>
-                        <select className="border border-gray-300 px-2 py-1 text-sm outline-none">
+                        <CurrencyMenu ariaLabel="Select currency" align="left" />
+                        <select className="v-select !w-[120px] !py-2 !px-3 text-sm">
                             <option>English</option>
                             <option>Arabic</option>
                         </select>
@@ -150,11 +148,8 @@ export default function Footer() {
                         Payments available at checkout.
                     </div>
                     <div className="flex gap-4 text-sm text-gray-600">
-                        <select className="border border-gray-300 px-2 py-1 text-sm outline-none">
-                            <option>United States (USD $)</option>
-                            <option>Lebanon (LBP)</option>
-                        </select>
-                        <select className="border border-gray-300 px-2 py-1 text-sm outline-none">
+                        <CurrencyMenu ariaLabel="Select currency" align="right" />
+                        <select className="v-select !w-[120px] !py-2 !px-3 text-sm">
                             <option>English</option>
                             <option>Arabic</option>
                         </select>
