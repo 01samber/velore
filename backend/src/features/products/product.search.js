@@ -36,10 +36,18 @@ const searchProducts = async (query) => {
       b.name as brand_name,
       b.brand_id,
       c.name as category_name,
-      c.category_id
+      c.category_id,
+      pv.images as variant_images
     FROM products p
     LEFT JOIN brands b ON p.brand_id = b.brand_id
     LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN LATERAL (
+      SELECT images
+      FROM product_variants
+      WHERE product_id = p.product_id
+      ORDER BY created_at ASC
+      LIMIT 1
+    ) pv ON true
     WHERE p.is_active = true
       AND (
         LOWER(p.name) LIKE ${'%' + searchTerm + '%'}
@@ -63,7 +71,9 @@ const searchProducts = async (query) => {
     frame_shape: p.frame_shape,
     brands: { name: p.brand_name, brand_id: p.brand_id },
     categories: { name: p.category_name, category_id: p.category_id },
-    product_variants: [],
+    product_variants: p.variant_images
+      ? [{ images: p.variant_images }]
+      : [],
     lens_width: p.lens_width,
     bridge_width: p.bridge_width,
     temple_length: p.temple_length,

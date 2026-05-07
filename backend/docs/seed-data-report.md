@@ -37,12 +37,14 @@ These are for local demos only. Do not reuse in production.
 The schema stores variant images as an array: `product_variants.images: String[]`.
 
 Seeded example paths:
-- `/uploads/products/demo/noir-classic-01.jpg`
-- `/uploads/products/demo/aurelia-gold-round-01.jpg`
+- `/uploads/products/demo/noir-classic-01.svg`
+- `/uploads/products/demo/aurelia-gold-round-01.svg`
+- `/uploads/blogs/demo/blue-light-guide.svg`
 
 Note: this repo currently contains only `uploads/.gitkeep`, so these images are **placeholders**. Add real demo images later under:
 
 - `backend/uploads/products/demo/`
+- `backend/uploads/blogs/demo/`
 
 ## How to run seed
 
@@ -77,4 +79,27 @@ Recommended tables to inspect:
 
 - The seed is designed to be safe to run multiple times using **upsert** where possible and “find-or-create” for non-unique entities.
 - Orders/reviews are only created if the demo users have no orders yet (prevents duplicate demo orders each run).
+
+## Serving demo images locally
+
+The backend serves uploads statically:
+
+- `/uploads/*` → `backend/uploads/*`
+
+Verify from the backend host:
+
+- `http://localhost:3000/uploads/products/demo/noir-classic-01.svg`
+- `http://localhost:3000/uploads/blogs/demo/blue-light-guide.svg`
+
+## Frontend integration note (important)
+
+The API returns **relative** image paths like:
+
+- `/uploads/products/demo/noir-classic-01.svg`
+- `/uploads/blogs/demo/blue-light-guide.svg`
+
+If the frontend is running on a different origin (ex: `http://localhost:5173`), it must either:
+
+- prepend the backend origin (ex: `http://localhost:3000`), or
+- proxy `/uploads` to the backend in dev.
 

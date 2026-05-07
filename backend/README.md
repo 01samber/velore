@@ -69,3 +69,20 @@ npx prisma db seed
 
 What it seeds and demo credentials are documented in `docs/seed-data-report.md`.
 
+## Demo images (no external URLs)
+
+Demo product/blog images are local SVG placeholders:
+
+- `uploads/products/demo/*.svg`
+- `uploads/blogs/demo/*.svg`
+
+The backend serves them via:
+
+- `GET /uploads/...` → `backend/uploads/...`
+
+Quick check:
+
+- `http://localhost:3000/uploads/products/demo/noir-classic-01.svg`
+
+If the frontend runs on a different origin (ex: `http://localhost:5173`), it must prepend the backend origin for these `/uploads/...` paths or configure a dev proxy for `/uploads`.
+

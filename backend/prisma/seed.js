@@ -157,8 +157,8 @@ async function main() {
       face_shape: 'oval',
       material: 'acetate',
       variants: [
-        { sku: 'VL-DEMO-NOIR-BLK', color_name: 'Matte Black', color_hex: '#0B0B0B', size: 'M', stock: 28, images: ['/uploads/products/demo/noir-classic-01.jpg'] },
-        { sku: 'VL-DEMO-NOIR-TORT', color_name: 'Tortoise', color_hex: '#6B4F3A', size: 'M', stock: 14, images: ['/uploads/products/demo/noir-classic-02.jpg'] }
+        { sku: 'VL-DEMO-NOIR-BLK', color_name: 'Matte Black', color_hex: '#0B0B0B', size: 'M', stock: 28, images: ['/uploads/products/demo/noir-classic-01.svg'] },
+        { sku: 'VL-DEMO-NOIR-TORT', color_name: 'Tortoise', color_hex: '#6B4F3A', size: 'M', stock: 14, images: ['/uploads/products/demo/noir-classic-02.svg'] }
       ]
     },
     {
@@ -173,8 +173,8 @@ async function main() {
       face_shape: 'square',
       material: 'metal',
       variants: [
-        { sku: 'VL-DEMO-AUR-GLD-S', color_name: 'Gold', color_hex: '#D4AF37', size: 'S', stock: 10, images: ['/uploads/products/demo/aurelia-gold-round-01.jpg'] },
-        { sku: 'VL-DEMO-AUR-GLD-M', color_name: 'Gold', color_hex: '#D4AF37', size: 'M', stock: 22, images: ['/uploads/products/demo/aurelia-gold-round-02.jpg'] }
+        { sku: 'VL-DEMO-AUR-GLD-S', color_name: 'Gold', color_hex: '#D4AF37', size: 'S', stock: 10, images: ['/uploads/products/demo/aurelia-gold-round-01.svg'] },
+        { sku: 'VL-DEMO-AUR-GLD-M', color_name: 'Gold', color_hex: '#D4AF37', size: 'M', stock: 22, images: ['/uploads/products/demo/aurelia-gold-round-02.svg'] }
       ]
     },
     {
@@ -189,7 +189,7 @@ async function main() {
       face_shape: 'round',
       material: 'acetate',
       variants: [
-        { sku: 'VL-DEMO-URB-CLR-M', color_name: 'Crystal Clear', color_hex: '#E6F1FF', size: 'M', stock: 35, images: ['/uploads/products/demo/urban-clear-bluelight-01.jpg'] }
+        { sku: 'VL-DEMO-URB-CLR-M', color_name: 'Crystal Clear', color_hex: '#E6F1FF', size: 'M', stock: 35, images: ['/uploads/products/demo/urban-clear-01.svg'] }
       ]
     },
     {
@@ -204,7 +204,7 @@ async function main() {
       face_shape: 'heart',
       material: 'acetate',
       variants: [
-        { sku: 'VL-DEMO-MAI-TORT-M', color_name: 'Tortoise', color_hex: '#6B4F3A', size: 'M', stock: 18, images: ['/uploads/products/demo/maison-tortoise-optical-01.jpg'] }
+        { sku: 'VL-DEMO-MAI-TORT-M', color_name: 'Tortoise', color_hex: '#6B4F3A', size: 'M', stock: 18, images: ['/uploads/products/demo/maison-tortoise-01.svg'] }
       ]
     },
     {
@@ -219,8 +219,8 @@ async function main() {
       face_shape: 'oval',
       material: 'polycarbonate',
       variants: [
-        { sku: 'VL-DEMO-NOV-SPT-BLK', color_name: 'Black', color_hex: '#111111', size: 'L', stock: 20, images: ['/uploads/products/demo/nova-sport-polarized-01.jpg'] },
-        { sku: 'VL-DEMO-NOV-SPT-GRY', color_name: 'Graphite', color_hex: '#3A3A3A', size: 'L', stock: 12, images: ['/uploads/products/demo/nova-sport-polarized-02.jpg'] }
+        { sku: 'VL-DEMO-NOV-SPT-BLK', color_name: 'Black', color_hex: '#111111', size: 'L', stock: 20, images: ['/uploads/products/demo/nova-sport-01.svg'] },
+        { sku: 'VL-DEMO-NOV-SPT-GRY', color_name: 'Graphite', color_hex: '#3A3A3A', size: 'L', stock: 12, images: ['/uploads/products/demo/nova-sport-02.svg'] }
       ]
     },
     {
@@ -235,8 +235,8 @@ async function main() {
       face_shape: 'diamond',
       material: 'metal',
       variants: [
-        { sku: 'VL-DEMO-AVI-GLD', color_name: 'Gold', color_hex: '#D4AF37', size: 'M', stock: 16, images: ['/uploads/products/demo/velore-aviator-01.jpg'] },
-        { sku: 'VL-DEMO-AVI-SLV', color_name: 'Silver', color_hex: '#C0C0C0', size: 'M', stock: 11, images: ['/uploads/products/demo/velore-aviator-02.jpg'] }
+        { sku: 'VL-DEMO-AVI-GLD', color_name: 'Gold', color_hex: '#D4AF37', size: 'M', stock: 16, images: ['/uploads/products/demo/velore-aviator-01.svg'] },
+        { sku: 'VL-DEMO-AVI-SLV', color_name: 'Silver', color_hex: '#C0C0C0', size: 'M', stock: 11, images: ['/uploads/products/demo/velore-aviator-02.svg'] }
       ]
     }
   ]
@@ -255,7 +255,7 @@ async function main() {
       face_shape: 'oval',
       material: 'tr90',
       variants: [
-        { sku: 'VL-DEMO-KIDS-BLU-S', color_name: 'Sky Blue', color_hex: '#7EC8E3', size: 'S', stock: 25, images: ['/uploads/products/demo/kids-softedge-01.jpg'] }
+        { sku: 'VL-DEMO-KIDS-BLU-S', color_name: 'Sky Blue', color_hex: '#7EC8E3', size: 'S', stock: 25, images: ['/uploads/products/demo/kids-softedge-01.svg'] }
       ]
     },
     {
@@ -270,7 +270,7 @@ async function main() {
       face_shape: 'oval',
       material: 'titanium',
       variants: [
-        { sku: 'VL-DEMO-TI-GRY-M', color_name: 'Titanium Grey', color_hex: '#8A8F98', size: 'M', stock: 9, images: ['/uploads/products/demo/aurelia-titanium-01.jpg'] }
+        { sku: 'VL-DEMO-TI-GRY-M', color_name: 'Titanium Grey', color_hex: '#8A8F98', size: 'M', stock: 9, images: ['/uploads/products/demo/aurelia-titanium-01.svg'] }
       ]
     },
     {
@@ -285,7 +285,7 @@ async function main() {
       face_shape: 'heart',
       material: 'acetate',
       variants: [
-        { sku: 'VL-DEMO-URB-SLT-M', color_name: 'Slate', color_hex: '#5B6770', size: 'M', stock: 19, images: ['/uploads/products/demo/urban-slate-bluelight-01.jpg'] }
+        { sku: 'VL-DEMO-URB-SLT-M', color_name: 'Slate', color_hex: '#5B6770', size: 'M', stock: 19, images: ['/uploads/products/demo/urban-slate-01.svg'] }
       ]
     },
     {
@@ -300,7 +300,7 @@ async function main() {
       face_shape: 'round',
       material: 'acetate',
       variants: [
-        { sku: 'VL-DEMO-NOV-EVD-BRN', color_name: 'Brown', color_hex: '#5A3E2B', size: 'M', stock: 17, images: ['/uploads/products/demo/nova-everyday-sun-01.jpg'] }
+        { sku: 'VL-DEMO-NOV-EVD-BRN', color_name: 'Brown', color_hex: '#5A3E2B', size: 'M', stock: 17, images: ['/uploads/products/demo/nova-everyday-01.svg'] }
       ]
     },
     {
@@ -315,7 +315,7 @@ async function main() {
       face_shape: 'square',
       material: 'acetate',
       variants: [
-        { sku: 'VL-DEMO-CAT-BLK-M', color_name: 'Black', color_hex: '#0B0B0B', size: 'M', stock: 13, images: ['/uploads/products/demo/velore-cateye-01.jpg'] }
+        { sku: 'VL-DEMO-CAT-BLK-M', color_name: 'Black', color_hex: '#0B0B0B', size: 'M', stock: 13, images: ['/uploads/products/demo/velore-cateye-01.svg'] }
       ]
     },
     {
@@ -330,7 +330,7 @@ async function main() {
       face_shape: 'oval',
       material: 'mixed',
       variants: [
-        { sku: 'VL-DEMO-BROW-BLK-M', color_name: 'Black', color_hex: '#111111', size: 'M', stock: 8, images: ['/uploads/products/demo/maison-browline-01.jpg'] }
+        { sku: 'VL-DEMO-BROW-BLK-M', color_name: 'Black', color_hex: '#111111', size: 'M', stock: 8, images: ['/uploads/products/demo/maison-browline-01.svg'] }
       ]
     }
   ]
@@ -413,7 +413,7 @@ async function main() {
       excerpt: 'Simple daily habits to keep your lenses crystal clear.',
       category: 'Care',
       author: 'Velore Team',
-      image: '/uploads/blog/demo/clean-glasses.jpg',
+      image: '/uploads/blogs/demo/lens-care-guide.svg',
       read_time: '4 min',
       content:
         'Use lukewarm water, a gentle soap, and a microfiber cloth. Avoid paper towels. Rinse dust before wiping to prevent micro-scratches.'
@@ -424,7 +424,7 @@ async function main() {
       excerpt: 'A quick guide to matching frames with your natural features.',
       category: 'Style',
       author: 'Velore Team',
-      image: '/uploads/blog/demo/face-shape-guide.jpg',
+      image: '/uploads/blogs/demo/face-shape-guide.svg',
       read_time: '6 min',
       content:
         'Round faces pair well with angular frames; square faces often look great with round or oval shapes. Balance is the goal—try complementary geometry.'
@@ -435,7 +435,7 @@ async function main() {
       excerpt: 'What actually matters when shopping for sunglasses.',
       category: 'Guide',
       author: 'Velore Team',
-      image: '/uploads/blog/demo/sunglasses-guide.jpg',
+      image: '/uploads/blogs/demo/sunglasses-guide.svg',
       read_time: '5 min',
       content:
         'Prioritize UV protection, then choose polarization for glare-heavy environments. Fit matters: lenses should cover the eye area without pinching temples.'
@@ -446,7 +446,7 @@ async function main() {
       excerpt: 'Do blue‑light lenses help and who should consider them?',
       category: 'Work',
       author: 'Velore Team',
-      image: '/uploads/blog/demo/blue-light.jpg',
+      image: '/uploads/blogs/demo/blue-light-guide.svg',
       read_time: '5 min',
       content:
         'Blue‑light filtering can reduce glare and eye strain for some users. Pair it with good lighting and regular breaks for the best results.'
@@ -593,7 +593,7 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log('• blogs seeded/updated:', blogSpecs.length)
   // eslint-disable-next-line no-console
-  console.log('• demo image paths use /uploads/products/demo/*.jpg (placeholders)')
+  console.log('• demo image paths use /uploads/products/demo/*.svg and /uploads/blogs/demo/*.svg')
 }
 
 main()
