@@ -1,33 +1,20 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ChevronLeft, Calendar, User, Clock, Tag } from 'lucide-react'
 import apiClient from '../../shared/services/apiClient'
-import { extractApiError } from '../../shared/services/apiHelpers'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function BlogPost() {
   const { id } = useParams()
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await apiClient.get(`/blogs/${id}`)
-      setPost(res?.data || null)
-    } catch (e) {
-      const apiErr = extractApiError(e, 'Failed to load blog post')
-      setError(apiErr.message)
-      setPost(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
 
   useEffect(() => {
-    load()
-  }, [load])
+    apiClient.get(`/blogs/${id}`)
+      .then(res => setPost(res?.data || null))
+      .catch(() => setPost(null))
+      .finally(() => setLoading(false))
+  }, [id])
 
   if (loading) {
     return (
@@ -41,16 +28,7 @@ export default function BlogPost() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">
-            {error ? 'Failed to load blog post' : 'Blog post not found'}
-          </h1>
-          {error && (
-            <>
-              <p className="text-sm text-red-600 mb-4">{error}</p>
-              <button onClick={load} className="text-gray-900 underline mb-4">Retry</button>
-              <div />
-            </>
-          )}
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">Blog post not found</h1>
           <Link to="/blogs" className="text-gray-600 hover:text-gray-900 underline">
             View all blogs
           </Link>
@@ -60,19 +38,27 @@ export default function BlogPost() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen v-page">
       <div className="relative h-[40vh] md:h-[50vh] w-full">
-        {post.image ? (
-          <img 
-            src={post.image} 
-            alt={post.title} 
-            fetchPriority="high"
-            decoding="async"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-100" />
-        )}
+        {(() => {
+          const src = resolveImageUrl(post.image)
+          return src ? (
+            <img
+              src={src}
+              alt={post.title}
+              decoding="async"
+              fetchPriority="high"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-sm text-gray-600">
+              No image available
+            </div>
+          )
+        })()}
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 flex items-center">
           <div className="px-6 md:px-16 max-w-4xl mx-auto w-full">
@@ -90,7 +76,7 @@ export default function BlogPost() {
         </div>
       </div>
 
-      <article className="px-6 md:px-16 py-12">
+      <article className="v-container v-section">
         <div className="max-w-3xl mx-auto">
           <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-8 pb-8 border-b border-gray-200">
             <div className="flex items-center gap-2"><User size={16} />{post.author || 'Unknown'}</div>

@@ -1,16 +1,9 @@
 // src/components/ui/ContactModal.jsx
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, Mail, Phone, MapPin, Send, Clock } from 'lucide-react'
-import apiClient from '../../services/apiClient'
-import { extractApiError, isApiSuccess } from '../../services/apiHelpers'
+import { useEffect, useRef, useState } from 'react'
+import { X, Mail, Phone, MapPin, Send } from 'lucide-react'
 
 export default function ContactModal({ isOpen, onClose }) {
-  const PHONE_DISPLAY = '+961 1 234 567'
-  const PHONE_TEL = '+9611234567'
-  const EMAIL = 'hello@velore.com'
-  const LOCATION = 'Beirut, Lebanon'
-  const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(LOCATION)}`
-
+  const closeBtnRef = useRef(null)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,102 +13,88 @@ export default function ContactModal({ isOpen, onClose }) {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [fieldErrors, setFieldErrors] = useState({})
-  const closeBtnRef = useRef(null)
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-    setFieldErrors((prev) => ({ ...prev, [e.target.name]: '' }))
-  }
-
-  const infoCards = useMemo(() => ([
-    { icon: Phone, label: 'Call us', value: PHONE_DISPLAY, href: `tel:${PHONE_TEL}` },
-    { icon: Mail, label: 'Email us', value: EMAIL, href: `mailto:${EMAIL}` },
-    { icon: MapPin, label: 'Visit us', value: LOCATION, href: MAPS_URL, external: true },
-  ]), [MAPS_URL])
-
-  const validate = () => {
-    const next = {}
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!formData.name.trim()) next.name = 'Name is required'
-    if (!formData.email.trim()) next.email = 'Email is required'
-    else if (!emailRegex.test(formData.email)) next.email = 'Please enter a valid email'
-    if (!formData.subject.trim()) next.subject = 'Subject is required'
-    if (!formData.message.trim()) next.message = 'Message is required'
-    setFieldErrors(next)
-    return Object.keys(next).length === 0
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError(null)
-    if (!validate()) return
-
-    setLoading(true)
-    try {
-      const result = await apiClient.post('/contact', formData)
-      if (!isApiSuccess(result)) {
-        throw extractApiError({ response: { status: 400, data: result } }, result?.message || 'Failed to send message.')
-      }
-
-      setSubmitted(true)
-      setTimeout(() => {
-        setSubmitted(false)
-        setFormData({ name: '', email: '', subject: '', message: '' })
-        setFieldErrors({})
-        onClose()
-      }, 1600)
-    } catch (err) {
-      const apiErr = extractApiError(err, 'Something went wrong. Please try again.')
-      setError(apiErr.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ESC close + basic focus
   useEffect(() => {
     if (!isOpen) return
     closeBtnRef.current?.focus?.()
-    const onKey = (e) => {
+
+    const onKeyDown = (e) => {
       if (e.key === 'Escape') onClose?.()
     }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [isOpen, onClose])
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) => {
+  e.preventDefault()
+  setError(null)
+
+  // Manual validation
+  if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
+    setError('Please fill in all fields before submitting.')
+    return
+  }
+
+  setLoading(true)
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+
+    if (!res.ok) throw new Error('Failed to send message.')
+
+    setSubmitted(true)
+    setTimeout(() => {
+      setSubmitted(false)
+      setFormData({ name: '', email: '', subject: '', message: '' })
+      onClose()
+    }, 2000)
+  } catch (err) {
+    console.error(err)
+    setError('Something went wrong. Please try again.')
+  } finally {
+    setLoading(false)
+  }
+}
+
   if (!isOpen) return null
+
+  const cardBase =
+    'v-icon-tile v-hover-lift group cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--velore-ring),0.16)] focus-visible:ring-offset-0'
+  const iconCircle =
+    'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 v-motion ' +
+    'bg-[rgba(var(--velore-accent),0.08)] border border-[rgba(var(--velore-border-soft),0.9)] ' +
+    'group-hover:bg-[rgba(var(--velore-accent),0.12)]'
 
   return (
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/35 backdrop-blur-[2px] z-50 transition-opacity duration-300 v-motion v-soft-enter"
+        className="fixed inset-0 bg-black/30 z-50 transition-opacity duration-300"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
         role="dialog"
         aria-modal="true"
         aria-label="Contact Velore"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90%] max-w-2xl max-h-[95vh] overflow-y-auto v-card-luxury v-soft-enter"
       >
-        <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto v-card-luxury v-soft-enter">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-6 border-b border-[rgba(var(--velore-border-soft),0.9)]">
-          <div>
-            <p className="v-eyebrow mb-2">Support</p>
-            <h2 className="v-h2 !text-xl md:!text-2xl">Contact Velore</h2>
-            <p className="v-caption mt-2 inline-flex items-center gap-2">
-              <Clock size={14} className="text-gray-500" aria-hidden="true" />
-              We usually reply within 24 hours.
-            </p>
-          </div>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[rgba(var(--velore-border-soft),0.9)]">
+          <h2 className="text-xl font-semibold text-gray-900">Contact Us</h2>
           <button 
             onClick={onClose}
-            className="v-icon-btn text-gray-700"
-            aria-label="Close contact dialog"
+            className="v-icon-btn !w-10 !h-10"
+            aria-label="Close"
             ref={closeBtnRef}
           >
             <X size={22} />
@@ -123,123 +102,126 @@ export default function ContactModal({ isOpen, onClose }) {
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 md:px-8 md:py-8">
+        <div className="px-6 py-6">
           {submitted ? (
-            <div className="text-center py-10">
-              <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-5">
-                <Send size={22} className="text-white" />
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send size={24} className="text-green-600" />
               </div>
-              <p className="v-eyebrow mb-2">Sent</p>
-              <h3 className="v-h2 !text-xl mb-2">Message delivered</h3>
-              <p className="v-lead">We’ll get back to you shortly.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Message Sent!</h3>
+              <p className="text-sm text-gray-500">We'll get back to you within 24 hours.</p>
             </div>
           ) : (
             <>
               {/* Contact Info */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {infoCards.map((c) => {
-                  const Icon = c.icon
-                  return (
-                    <a
-                      key={c.label}
-                      href={c.href}
-                      target={c.external ? "_blank" : undefined}
-                      rel={c.external ? "noreferrer noopener" : undefined}
-                      className="v-icon-tile v-hover-lift"
-                      aria-label={`${c.label}: ${c.value}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="v-icon-circle" aria-hidden="true">
-                          <Icon size={16} className="text-gray-800" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="v-eyebrow">{c.label}</p>
-                          <p className="text-sm font-medium text-gray-900 truncate">{c.value}</p>
-                        </div>
-                      </div>
-                    </a>
-                  )
-                })}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-[rgba(var(--velore-border-soft),0.9)]">
+                <a
+                  href="tel:+9611234567"
+                  aria-label="Call Velore at +961 1 234 567"
+                  className={cardBase}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={iconCircle}>
+                      <Phone size={16} className="text-gray-800" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Call us</p>
+                      <p className="text-sm font-medium text-gray-900">+961 1 234 567</p>
+                    </div>
+                  </div>
+                </a>
+
+                <a
+                  href="mailto:hello@velore.com"
+                  aria-label="Email Velore at hello@velore.com"
+                  className={cardBase}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={iconCircle}>
+                      <Mail size={16} className="text-gray-800" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500">Email us</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">hello@velore.com</p>
+                    </div>
+                  </div>
+                </a>
+
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Beirut%2C%20Lebanon"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open Velore location in Google Maps"
+                  className={cardBase}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={iconCircle}>
+                      <MapPin size={16} className="text-gray-800" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Visit us</p>
+                      <p className="text-sm font-medium text-gray-900">Beirut, Lebanon</p>
+                    </div>
+                  </div>
+                </a>
               </div>
 
               {/* Form */}
-              <div className="v-divider mb-8" />
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="v-label mb-2" htmlFor="contact-name">Name</label>
-                    <input
-                      id="contact-name"
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={`v-input ${fieldErrors.name ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
-                      autoComplete="name"
-                      aria-label="Name"
-                    />
-                    {fieldErrors.name ? <p className="v-field-error">{fieldErrors.name}</p> : null}
-                  </div>
-                  <div>
-                    <label className="v-label mb-2" htmlFor="contact-email">Email</label>
-                    <input
-                      id="contact-email"
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`v-input ${fieldErrors.email ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
-                      autoComplete="email"
-                      aria-label="Email"
-                    />
-                    {fieldErrors.email ? <p className="v-field-error">{fieldErrors.email}</p> : null}
-                  </div>
-                </div>
-                <div>
-                  <label className="v-label mb-2" htmlFor="contact-subject">Subject</label>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
-                    id="contact-subject"
                     type="text"
-                    name="subject"
-                    value={formData.subject}
+                    name="name"
+                    placeholder="Your Name"
+                    value={formData.name}
                     onChange={handleChange}
-                    className={`v-input ${fieldErrors.subject ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
-                    aria-label="Subject"
+                    required
+                    className="v-input"
                   />
-                  {fieldErrors.subject ? <p className="v-field-error">{fieldErrors.subject}</p> : null}
-                </div>
-                <div>
-                  <label className="v-label mb-2" htmlFor="contact-message">Message</label>
-                  <textarea
-                    id="contact-message"
-                    name="message"
-                    value={formData.message}
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Your Email"
+                    value={formData.email}
                     onChange={handleChange}
-                    rows={6}
-                    className={`v-input resize-none min-h-[160px] ${fieldErrors.message ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
-                    aria-label="Message"
+                    required
+                    className="v-input"
                   />
-                  {fieldErrors.message ? <p className="v-field-error">{fieldErrors.message}</p> : null}
                 </div>
+                <input
+                  type="text"
+                  name="subject"
+                  placeholder="Subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  required
+                  className="v-input"
+                />
+                <textarea
+                  name="message"
+                  placeholder="Your Message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                  rows="5"
+                  className="v-input resize-none"
+                />
 
                 {/* Error message */}
                 {error && (
-                  <div className="v-banner-error">
-                    <span className="min-w-0">{error}</span>
-                  </div>
+                  <p className="text-sm text-red-500">{error}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full v-btn-primary !rounded-xl"
+                  className="w-full v-btn-primary disabled:opacity-60"
                 >
-                  {loading ? 'Sending…' : 'Send message'}
+                  {loading ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </>
           )}
-        </div>
         </div>
       </div>
     </>

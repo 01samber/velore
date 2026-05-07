@@ -1,315 +1,183 @@
 @import "tailwindcss";
 
-/* -------------------------------------------------------------------------- */
-/* Velore — Majestic UI language (Tailwind-friendly)                           */
-/* -------------------------------------------------------------------------- */
-
 @layer base {
   :root {
-    /* Luxury neutrals (warm ivory / pearl / stone) */
-    --velore-canvas: 251 250 247; /* warm ivory */
-    --velore-canvas-muted: 246 245 241; /* soft stone */
-    --velore-pearl: 250 250 249; /* warm white */
+    /* Luxury neutrals */
+    --velore-canvas: 252 250 245; /* warm ivory */
+    --velore-canvas-muted: 245 242 234; /* soft stone */
+    --velore-pearl: 255 252 247; /* warm white */
     --velore-card: 255 255 255; /* card base */
 
-    /* Ink / charcoal */
-    --velore-fg: 17 24 39; /* gray-900 */
-    --velore-muted: 107 114 128; /* gray-500 */
+    --velore-fg: 17 24 39; /* slate-900 */
+    --velore-muted: 75 85 99; /* slate-600 */
 
-    /* Borders + rings */
-    --velore-border: 229 231 235; /* gray-200 */
-    --velore-border-soft: 231 229 224; /* warm border */
-    --velore-ring: 17 24 39; /* gray-900 */
+    --velore-border: 205 201 193; /* warm gray */
+    --velore-border-soft: 223 218 210;
 
-    /* Brand accent (muted aqua/teal, used sparingly) */
-    --velore-accent: 30 136 156;
-    --velore-accent-soft: 233 248 250;
+    /* Subtle teal accent */
+    --velore-accent: 7 128 120;
+    --velore-accent-soft: 233 247 246;
 
-    /* Back-compat */
-    --velore-bg: var(--velore-canvas);
-    --velore-soft: var(--velore-canvas-muted);
+    --velore-ring: 7 128 120;
   }
 
-  html {
-    color: rgb(var(--velore-fg));
-    background: rgb(var(--velore-canvas));
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  html, body {
+    height: 100%;
   }
 
   body {
-    font-feature-settings: "liga" 1, "kern" 1;
+    color: rgb(var(--velore-fg));
     background: rgb(var(--velore-canvas));
-  }
-
-  ::selection {
-    background: rgba(17, 24, 39, 0.12);
-  }
-
-  a {
-    text-underline-offset: 3px;
-  }
-
-  * {
-    scroll-margin-top: 84px;
   }
 }
 
 @layer components {
-  /* Motion (reduced-motion safe) */
-  @keyframes v-fade-up {
-    from { opacity: 0; transform: translate3d(0, 10px, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
-  }
-  @keyframes v-soft-enter {
-    from { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.98); }
-    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-  }
-  @keyframes v-route-enter {
-    from { opacity: 0; transform: translate3d(0, 10px, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
-  }
-
-  .v-motion {
-    @apply transition;
-  }
-  .v-fade-up {
-    animation: v-fade-up 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-  .v-soft-enter {
-    animation: v-soft-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-  .v-popover-anim {
-    transform-origin: top right;
-    animation: v-soft-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-  .v-route-enter {
-    animation: v-route-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .v-motion { transition: none !important; }
-    .v-fade-up, .v-soft-enter, .v-popover-anim, .v-route-enter { animation: none !important; }
-    .v-hover-lift { transform: none !important; }
-  }
-
-  /* Layout */
-  .v-page {
-    background: rgb(var(--velore-canvas));
-    min-height: 100vh;
-  }
-  .v-section-muted {
-    background: rgb(var(--velore-canvas-muted));
-  }
-  .v-accent-soft {
-    background: rgb(var(--velore-accent-soft));
-  }
-  .v-border-soft {
-    border-color: rgb(var(--velore-border-soft));
-  }
-  .v-container {
-    @apply mx-auto w-full max-w-7xl px-6 md:px-16;
-  }
-  .v-section {
-    @apply py-14 md:py-20;
-  }
-  .v-section-tight {
-    @apply py-10 md:py-14;
-  }
-  .v-divider {
-    @apply border-t border-gray-200/70;
-  }
-  .v-grid-editorial {
-    @apply grid gap-8 md:gap-12 md:grid-cols-12 items-start;
-  }
-
   /* Typography */
-  .v-eyebrow {
-    @apply text-[11px] md:text-xs uppercase tracking-[0.22em] text-gray-500;
-  }
-  .v-h1 {
-    @apply text-4xl md:text-6xl font-semibold tracking-[-0.02em] text-gray-900 leading-[1.02];
-  }
-  .v-h2 {
-    @apply text-2xl md:text-3xl font-semibold tracking-[-0.015em] text-gray-900 leading-tight;
-  }
-  .v-lead {
-    @apply text-base md:text-lg text-gray-600 leading-relaxed;
-  }
-  .v-body {
-    @apply text-sm md:text-base text-gray-700 leading-relaxed;
-  }
-  .v-caption {
-    @apply text-xs text-gray-500 leading-relaxed;
-  }
-  .v-price {
-    @apply text-sm md:text-base font-semibold text-gray-900 tabular-nums tracking-tight;
-  }
-  .v-title {
-    @apply text-4xl md:text-6xl font-semibold tracking-[-0.02em] text-gray-900 leading-[1.02];
-  }
-  .v-section-title {
-    @apply text-2xl md:text-3xl font-semibold tracking-[-0.015em] text-gray-900 leading-tight;
-  }
-  .v-label {
-    @apply block text-sm font-medium text-gray-900;
-  }
-  .v-muted {
-    @apply text-sm text-gray-500;
-  }
+  .v-eyebrow { @apply text-[11px] tracking-[0.24em] uppercase text-gray-500; }
+  .v-h1 { @apply text-3xl md:text-5xl font-semibold tracking-tight text-gray-900; }
+  .v-h2 { @apply text-2xl md:text-3xl font-semibold tracking-tight text-gray-900; }
+  .v-lead { @apply text-base md:text-lg text-gray-600 leading-relaxed; }
+  .v-body { @apply text-sm text-gray-700 leading-relaxed; }
+  .v-caption { @apply text-xs text-gray-500; }
+  .v-price { @apply text-sm font-semibold text-gray-900; }
+  .v-label { @apply text-xs font-medium text-gray-700; }
 
-  /* Surfaces */
+  /* Layout/background */
+  .v-page { @apply min-h-screen; background: rgb(var(--velore-canvas)); }
+  .v-container { @apply px-6 md:px-16; }
+  .v-section { @apply py-12 md:py-16; }
+  .v-section-muted { background: rgb(var(--velore-canvas-muted)); }
+  .v-divider { border-color: rgba(var(--velore-border-soft), 0.9); @apply border-t; }
+
+  /* Surfaces/cards */
   .v-card {
     background: rgb(var(--velore-card));
-    border-color: rgba(var(--velore-border), 0.75);
-    @apply border rounded-xl shadow-[0_1px_0_rgba(17,24,39,0.04)];
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply rounded-2xl shadow-sm;
   }
   .v-card-luxury {
     background: rgb(var(--velore-card));
-    border-color: rgba(var(--velore-border-soft), 0.9);
-    box-shadow:
-      0 1px 0 rgba(17, 24, 39, 0.04),
-      0 18px 45px rgba(17, 24, 39, 0.06);
-    @apply border rounded-2xl;
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+    @apply rounded-2xl;
   }
   .v-card-media {
     background: rgb(var(--velore-pearl));
-    border-color: rgba(var(--velore-border-soft), 0.9);
-    @apply border rounded-2xl;
-  }
-  .v-card-soft {
-    background: rgba(var(--velore-card), 0.82);
-    border-color: rgba(var(--velore-border-soft), 0.75);
-    @apply backdrop-blur border rounded-2xl shadow-[0_1px_0_rgba(17,24,39,0.04)];
+    border-bottom: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply rounded-xl;
   }
   .v-surface {
     background: rgb(var(--velore-pearl));
-    border-color: rgba(var(--velore-border-soft), 0.85);
-    @apply border rounded-2xl;
+    border: 1px solid rgba(var(--velore-border-soft), 0.85);
+    @apply rounded-2xl;
   }
   .v-surface-muted {
-    background: rgb(var(--velore-canvas-muted));
-    border-color: rgba(var(--velore-border-soft), 0.85);
-    @apply border rounded-2xl;
-  }
-
-  /* Buttons */
-  .v-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-[0.06em] uppercase transition
-      bg-gray-900 text-white hover:bg-black active:translate-y-[0.5px]
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2
-      disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  .v-btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-[0.06em] uppercase transition
-      border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 active:translate-y-[0.5px]
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2
-      disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  .v-btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition
-      bg-transparent text-gray-800 hover:bg-gray-100 active:translate-y-[0.5px]
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2
-      disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  .v-icon-btn {
-    @apply inline-flex items-center justify-center rounded-full h-10 w-10 transition
-      hover:bg-gray-100 active:translate-y-[0.5px]
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2;
-  }
-  .v-link {
-    @apply underline decoration-gray-300 underline-offset-4 transition hover:decoration-gray-900;
-  }
-
-  /* Inputs */
-  .v-input {
-    @apply w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400
-      outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed;
-  }
-  .v-select {
-    @apply w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-sm text-gray-900
-      outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed;
-  }
-  .v-helper {
-    @apply mt-2 text-xs text-gray-500 leading-relaxed;
-  }
-  .v-field-error {
-    @apply mt-1 text-xs text-red-600;
+    background: rgb(var(--velore-accent-soft));
+    border: 1px solid rgba(var(--velore-border-soft), 0.85);
+    @apply rounded-2xl;
   }
   .v-form-card {
     background: rgb(var(--velore-card));
-    border-color: rgba(var(--velore-border-soft), 0.95);
-    box-shadow:
-      0 1px 0 rgba(17, 24, 39, 0.04),
-      0 18px 45px rgba(17, 24, 39, 0.05);
-    @apply border rounded-2xl p-6 md:p-7;
-  }
-
-  /* Checkbox / radio */
-  .v-check {
-    @apply inline-flex items-center gap-3 select-none;
-  }
-  .v-check-box {
-    @apply h-5 w-5 rounded-md border border-gray-300 bg-white transition
-      flex items-center justify-center
-      peer-focus-visible:ring-2 peer-focus-visible:ring-gray-900 peer-focus-visible:ring-offset-2;
-  }
-  .v-check-mark {
-    @apply h-3.5 w-3.5 text-white opacity-0 transition;
-  }
-  .peer:checked + .v-check-box {
-    @apply bg-gray-900 border-gray-900;
-  }
-  .peer:checked + .v-check-box .v-check-mark {
-    @apply opacity-100;
-  }
-
-  /* Feedback */
-  .v-banner-error {
-    @apply bg-red-50 border border-red-200/70 rounded-xl px-4 py-3 text-red-800 text-sm flex items-start justify-between gap-3;
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+    @apply rounded-2xl p-6 md:p-7;
   }
   .v-empty {
     background: rgb(var(--velore-card));
-    border-color: rgba(var(--velore-border-soft), 0.95);
-    box-shadow: 0 18px 45px rgba(17, 24, 39, 0.05);
-    @apply border rounded-2xl px-8 py-12 text-center;
-  }
-  .v-loading {
-    @apply inline-flex items-center gap-2 text-sm text-gray-500;
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+    @apply rounded-2xl p-8 text-center text-gray-600;
   }
 
-  /* Popovers / menus */
+  /* Popovers/menus */
   .v-popover {
     background: rgb(var(--velore-pearl));
-    border-color: rgba(var(--velore-border-soft), 0.95);
-    box-shadow: 0 22px 55px rgba(17, 24, 39, 0.12);
-    @apply border rounded-2xl overflow-hidden;
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    box-shadow: 0 18px 48px rgba(17, 24, 39, 0.10);
+    @apply rounded-2xl;
   }
-  .v-menu-item {
-    @apply w-full flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-800 transition;
-    background: transparent;
-  }
-  .v-menu-item:hover {
-    background: rgba(var(--velore-accent), 0.06);
-  }
+  .v-menu-item { @apply transition-colors; }
+  .v-menu-item:hover { background: rgba(var(--velore-accent), 0.06); }
 
-  /* Cards microinteraction */
-  .v-hover-lift {
-    @apply transition will-change-transform hover:-translate-y-0.5;
+  /* Buttons/forms */
+  .v-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 font-medium transition duration-200 ease-out;
+    @apply bg-gray-900 text-white hover:bg-gray-700;
+    @apply rounded-xl px-4 py-2.5;
   }
+  .v-btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 font-medium transition duration-200 ease-out;
+    background: rgb(var(--velore-pearl));
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply text-gray-900 hover:bg-[rgba(var(--velore-accent),0.06)] rounded-xl px-4 py-2.5;
+  }
+  .v-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 font-medium transition duration-200 ease-out;
+    @apply text-gray-700 hover:text-gray-900 hover:bg-[rgba(var(--velore-accent),0.06)];
+    @apply rounded-xl px-3 py-2;
+  }
+  .v-icon-btn {
+    @apply inline-flex items-center justify-center transition duration-200 ease-out;
+    background: rgb(var(--velore-pearl));
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply rounded-xl w-10 h-10 text-gray-700 hover:text-gray-900;
+  }
+  .v-input {
+    background: rgb(var(--velore-pearl));
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply w-full rounded-xl px-4 py-3 text-sm outline-none transition;
+  }
+  .v-input:focus { box-shadow: 0 0 0 4px rgba(var(--velore-ring), 0.16); }
+  .v-select {
+    background: rgb(var(--velore-pearl));
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply w-full rounded-xl px-4 py-3 text-sm outline-none transition;
+  }
+  .v-select:focus { box-shadow: 0 0 0 4px rgba(var(--velore-ring), 0.16); }
+  .v-field-error { @apply text-xs text-red-600 mt-1; }
 
-  /* Icon tiles (clickable company info) */
+  /* Icon tiles */
   .v-icon-tile {
-    background: rgb(var(--velore-canvas-muted));
-    border-color: rgba(var(--velore-border-soft), 0.95);
-    @apply w-full text-left p-5 transition border rounded-2xl
-      hover:border-gray-300
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2;
+    background: rgb(var(--velore-pearl));
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    @apply rounded-2xl p-4;
   }
   .v-icon-circle {
-    background: rgb(var(--velore-card));
-    border-color: rgba(var(--velore-border-soft), 0.95);
-    @apply w-11 h-11 rounded-full border flex items-center justify-center flex-shrink-0;
+    background: rgba(var(--velore-accent), 0.08);
+    border: 1px solid rgba(var(--velore-border-soft), 0.9);
+    @apply w-10 h-10 rounded-full flex items-center justify-center text-gray-800;
+  }
+}
+
+@layer utilities {
+  @keyframes velore-fade-up {
+    from { opacity: 0; transform: translate3d(0, 8px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  @keyframes velore-soft-enter {
+    from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.99); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+  @keyframes velore-popover {
+    from { opacity: 0; transform: translate3d(0, 6px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  @keyframes velore-route-enter {
+    from { opacity: 0; transform: translate3d(0, 8px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  .v-motion { @apply transition duration-200 ease-out; }
+  .v-fade-up { animation: velore-fade-up 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .v-soft-enter { animation: velore-soft-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .v-popover-anim { animation: velore-popover 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .v-route-enter { animation: velore-route-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .v-hover-lift { @apply transition duration-200 ease-out; }
+  .v-hover-lift:hover { transform: translate3d(0, -1px, 0); box-shadow: 0 14px 40px rgba(17, 24, 39, 0.08); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .v-fade-up, .v-soft-enter, .v-popover-anim, .v-route-enter { animation: none !important; }
+    .v-motion, .v-hover-lift { transition: none !important; }
+    .v-hover-lift:hover { transform: none !important; }
   }
 }

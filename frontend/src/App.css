@@ -1,3 +1,7 @@
-/* Velore
-   This file is intentionally minimal.
-   Global styling lives in `src/index.css` (Tailwind + Velore primitives). */
+/* This file previously contained SCSS-style nesting which is invalid in plain CSS.
+   Keep it minimal and safe; global design primitives live in src/index.css. */
+
+.v-focus-ring:focus-visible {
+  outline: 2px solid rgba(var(--velore-ring), 0.55);
+  outline-offset: 2px;
+}

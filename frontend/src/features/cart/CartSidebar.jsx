@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { X, Minus, Plus, Trash2 } from 'lucide-react'
 import cartService from './cartService'
-import { clearCustomerToken, extractApiError } from '../../shared/services/apiHelpers'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 const FREE_SHIPPING_THRESHOLD = 50
 
 function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
   const name = item.products?.name || item.product?.name || item.name || 'Product'
   const price = parseFloat(item.products?.price || item.product?.price || item.price || 0)
-  const image = item.products?.product_variants?.[0]?.images?.[0] || item.product?.image || item.image || ''
+  const imageRaw = item.products?.product_variants?.[0]?.images?.[0] || item.product?.image || item.image || null
+  const image = resolveImageUrl(imageRaw)
   const itemId = item.cart_item_id
   const productId = item.product_id || item.productId
   const quantity = item.quantity || 0
@@ -21,9 +22,20 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
     <div className="flex gap-4 py-4 border-b border-gray-200">
       <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden">
         {image ? (
-          <img src={image} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          <img
+            src={image}
+            alt={name}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+            —
+          </div>
         )}
       </div>
 
@@ -107,19 +119,19 @@ export default function CartSidebar({ isOpen, onClose }) {
     setIsGuest(false)
     try {
       const response = await cartService.getCart()
-      const cartItems = response?.data?.cart_items || []
+      const cartItems = response?.cart_items || response?.data?.cart_items || []
       setItems(Array.isArray(cartItems) ? cartItems : [])
     } catch (error) {
-      const apiErr = extractApiError(error, 'Failed to load cart')
-      console.error('Failed to load cart:', apiErr)
-      if (apiErr.status === 401 || apiErr.status === 403) {
-        clearCustomerToken()
+      console.error('Failed to load cart:', error)
+      if (error?.response?.status === 401) {
+        localStorage.removeItem('token')
+        sessionStorage.removeItem('token')
         setIsGuest(true)
         const localCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
         setItems(localCart)
-        return
+      } else {
+        setItems([])
       }
-      setItems([])
     }
   }
 

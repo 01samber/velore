@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Truck, ShieldCheck, RotateCcw, Tag, CheckCircle, X, ShoppingBag, Glasses } from 'lucide-react'
+import { ChevronLeft, Truck, Shield, RotateCcw, Tag, CheckCircle, X } from 'lucide-react'
 import cartService from '../cart/cartService'
 import orderService from './orderService'
-import { extractApiError } from '../../shared/services/apiHelpers'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 const COUNTRIES = ['Lebanon', 'United States', 'Canada', 'United Kingdom', 'France', 'UAE']
 const FREE_SHIPPING_THRESHOLD = 50
@@ -163,23 +163,14 @@ export default function Checkout() {
     setCartTotal(total)
   }
 
-  const hasItems = cartItems.length > 0
-  const subtotal = hasItems ? cartTotal : 0
-  const shipping = hasItems ? (subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3) : 0
-  const discount = hasItems ? Math.min(discountAmount, subtotal + shipping) : 0
-  const total = Math.max(0, subtotal + shipping - discount)
-
-  useEffect(() => {
-    if (!hasItems && (discountAmount !== 0 || discountApplied)) {
-      setDiscountAmount(0)
-      setDiscountApplied(false)
-      setDiscountCode('')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasItems])
+  const subtotal = cartTotal
+  const cartIsEmpty = cartItems.length === 0 || subtotal <= 0
+  const shipping = cartIsEmpty ? 0 : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3
+  const discountSafe = cartIsEmpty ? 0 : discountAmount
+  const total = Math.max(0, subtotal + shipping - discountSafe)
 
   const applyDiscount = () => {
-    if (!hasItems) return
+    if (cartIsEmpty) return
     if (discountCode.toUpperCase() === 'WELCOME10' && !discountApplied) {
       setDiscountAmount(subtotal * 0.1); setDiscountApplied(true)
     } else if (discountCode.toUpperCase() === 'FREESHIP' && !discountApplied) {
@@ -252,8 +243,7 @@ const buildOrderPayload = () => {
       setConfirmedOrder({ orderNumber, orderId: response?.data?.order_id })
       setShowCODModal(true)
     } catch (err) {
-      const apiErr = extractApiError(err, 'Checkout failed. Please try again.')
-      setError(apiErr.message)
+      setError(err?.message || 'Checkout failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -270,8 +260,7 @@ const buildOrderPayload = () => {
       window.location.href = appUrl
       setTimeout(() => { window.location.href = webUrl }, 1500)
     } catch (err) {
-      const apiErr = extractApiError(err, 'Checkout failed. Please try again.')
-      setError(apiErr.message)
+      setError(err?.message || 'Checkout failed. Please try again.')
       setLoading(false)
     }
   }
@@ -280,37 +269,18 @@ const buildOrderPayload = () => {
   const handleCardCheckout = async () => {
     setLoading(true)
     try {
-      const { response, orderNumber } = await createOrder()
-
-      // Backend must provide a checkout/payment URL for card flows. Do not use placeholders.
-      const checkoutUrl =
-        response?.data?.checkout_url ||
-        response?.data?.payment_url ||
-        response?.data?.url ||
-        null
-
-      if (!checkoutUrl) {
-        const msg = response?.message || 'Card payments are not configured yet.'
-        throw { isApiError: true, status: 400, message: msg, errors: response?.errors || [], raw: response }
-      }
-
-      // Optionally append returnUrl if backend supports it.
-      const returnUrl = `${window.location.origin}/payment-success?orderNumber=${encodeURIComponent(orderNumber)}&amount=${encodeURIComponent(total.toFixed(2))}`
-      const urlWithReturn = checkoutUrl.includes('returnUrl=')
-        ? checkoutUrl
-        : checkoutUrl + (checkoutUrl.includes('?') ? '&' : '?') + `returnUrl=${encodeURIComponent(returnUrl)}`
-
-      window.location.href = urlWithReturn
+      const { orderNumber } = await createOrder()
+      // ⚠️ Replace YOUR_STRIPE_PAYMENT_LINK with your real Stripe Payment Link from dashboard.stripe.com
+      const stripeUrl = `https://buy.stripe.com/YOUR_STRIPE_PAYMENT_LINK?prefilled_email=${encodeURIComponent(contactInfo.email)}&client_reference_id=${orderNumber}`
+      window.location.href = stripeUrl
     } catch (err) {
-      const apiErr = extractApiError(err, 'Checkout failed. Please try again.')
-      setError(apiErr.message)
+      setError(err?.message || 'Checkout failed. Please try again.')
       setLoading(false)
     }
   }
 
   const handleCheckout = () => {
     setError('')
-    if (!hasItems || loading) return
     if (!validateForm()) return
     if (selectedPayment === 'cod') handleCODCheckout()
     else if (selectedPayment === 'whish') handleWhishCheckout()
@@ -324,14 +294,13 @@ const buildOrderPayload = () => {
 
   const ctaLabel = () => {
     if (loading) return 'Processing...'
-    if (!hasItems) return 'Cart is empty'
     if (selectedPayment === 'whish') return `PAY WITH WHISH  •  $${total.toFixed(2)}`
     if (selectedPayment === 'mastercard') return `PAY BY CARD  •  $${total.toFixed(2)}`
     return `CONFIRM ORDER  •  $${total.toFixed(2)}`
   }
 
   return (
-    <div className="v-page">
+    <div className="min-h-screen bg-gray-50">
       {showCODModal && confirmedOrder && (
         <OrderConfirmationModal
           orderNumber={confirmedOrder.orderNumber}
@@ -340,133 +309,92 @@ const buildOrderPayload = () => {
         />
       )}
 
-      <div className="v-container py-10">
+      <div className="px-6 md:px-16 py-8">
         <div className="max-w-6xl mx-auto">
-          <p className="v-eyebrow mb-3">Checkout</p>
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
-            <div>
-              <h1 className="v-h1 !text-3xl md:!text-5xl">Secure checkout</h1>
-              <p className="v-lead mt-4 max-w-2xl">
-                Complete your order with a calm, guided flow — your details stay private and protected.
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-[11px] tracking-[0.14em] uppercase text-gray-700"><ShieldCheck size={14} className="mr-2" /> Secure</span>
-              <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-[11px] tracking-[0.14em] uppercase text-gray-700"><Truck size={14} className="mr-2" /> Shipping</span>
-              <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-[11px] tracking-[0.14em] uppercase text-gray-700"><RotateCcw size={14} className="mr-2" /> Returns</span>
-            </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+            <Link to="/shop" className="hover:text-gray-900">Shop</Link>
+            <span>/</span>
+            <span className="text-gray-900 font-medium">Checkout</span>
           </div>
 
           {error && (
-            <div className="v-banner-error mb-4">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
               {error}
             </div>
           )}
 
           {!isLoggedIn && (
-            <div className="mb-8 v-surface p-5 md:p-6">
-              <p className="text-sm text-gray-700">
-                You’re checking out as a guest.{' '}
-                <Link to="/login" className="v-link font-medium text-gray-900">Sign in</Link>{' '}
-                for faster checkout and order tracking.
-              </p>
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-sm text-sm text-blue-700">
+              You're checking out as a guest.{' '}
+              <Link to="/login" className="font-medium underline">Login for faster checkout</Link>
             </div>
           )}
 
-          {!hasItems && (
-            <div className="v-empty mb-10">
-              <div className="mx-auto mb-4 w-12 h-12 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-800">
-                <div className="relative">
-                  <ShoppingBag size={18} aria-hidden="true" />
-                  <Glasses size={14} className="absolute -right-2 -top-2 text-gray-700" aria-hidden="true" />
-                </div>
-              </div>
-              <p className="v-eyebrow mb-2">Nothing to checkout</p>
-              <p className="v-h2 !text-xl mb-2">Your cart is empty</p>
-              <p className="v-lead mb-8">Add frames to your cart to continue to checkout.</p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Link to="/shop" className="v-btn-primary">Continue shopping</Link>
-                <Link to="/favorite" className="v-btn-secondary">View favorites</Link>
-              </div>
-            </div>
-          )}
-
-          <div className={`flex flex-col lg:flex-row gap-8 ${!hasItems ? 'opacity-60 pointer-events-none select-none' : ''}`}>
+          <div className="flex flex-col lg:flex-row gap-8">
             <div className="flex-1 space-y-6">
 
               {/* 1. Contact */}
-              <div className="v-form-card">
+              <div className="bg-white rounded-sm p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                  <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">1</span>
                   Contact
                 </h2>
                 <input
                   type="email" placeholder="Email" value={contactInfo.email}
                   onChange={(e) => { setContactInfo({ email: e.target.value }); setFieldErrors(p => ({ ...p, email: '' })) }}
-                  disabled={!hasItems || loading}
-                  className={`v-input ${fieldErrors.email ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''} disabled:bg-gray-50`}
+                  className={`w-full border px-4 py-3 text-sm outline-none rounded-sm ${fieldErrors.email ? 'border-red-500' : 'border-gray-300 focus:border-gray-900'}`}
                 />
                 {fieldErrors.email && <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>}
               </div>
 
               {/* 2. Delivery */}
-              <div className="v-form-card">
+              <div className="bg-white rounded-sm p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">2</span>
+                  <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">2</span>
                   Delivery
                 </h2>
                 <div className="space-y-4">
-                  <select value={shippingAddress.country} onChange={(e) => handleShippingChange('country', e.target.value)} disabled={!hasItems || loading} className="v-select disabled:bg-gray-50">
+                  <select value={shippingAddress.country} onChange={(e) => handleShippingChange('country', e.target.value)} className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 rounded-sm bg-white">
                     {COUNTRIES.map(c => <option key={c}>{c}</option>)}
                   </select>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <input type="text" placeholder="First name" value={shippingAddress.firstName} onChange={(e) => handleShippingChange('firstName', e.target.value)} disabled={!hasItems || loading} className={`v-input disabled:bg-gray-50 ${fieldErrors.firstName ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`} />
+                      <input type="text" placeholder="First name" value={shippingAddress.firstName} onChange={(e) => handleShippingChange('firstName', e.target.value)} className={`w-full border px-4 py-3 text-sm outline-none rounded-sm ${fieldErrors.firstName ? 'border-red-500' : 'border-gray-300 focus:border-gray-900'}`} />
                       {fieldErrors.firstName && <p className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</p>}
                     </div>
                     <div>
-                      <input type="text" placeholder="Last name" value={shippingAddress.lastName} onChange={(e) => handleShippingChange('lastName', e.target.value)} disabled={!hasItems || loading} className={`v-input disabled:bg-gray-50 ${fieldErrors.lastName ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`} />
+                      <input type="text" placeholder="Last name" value={shippingAddress.lastName} onChange={(e) => handleShippingChange('lastName', e.target.value)} className={`w-full border px-4 py-3 text-sm outline-none rounded-sm ${fieldErrors.lastName ? 'border-red-500' : 'border-gray-300 focus:border-gray-900'}`} />
                       {fieldErrors.lastName && <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>}
                     </div>
                   </div>
                   <div>
-                    <input type="text" placeholder="Address" value={shippingAddress.address} onChange={(e) => handleShippingChange('address', e.target.value)} disabled={!hasItems || loading} className={`v-input disabled:bg-gray-50 ${fieldErrors.address ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`} />
+                    <input type="text" placeholder="Address" value={shippingAddress.address} onChange={(e) => handleShippingChange('address', e.target.value)} className={`w-full border px-4 py-3 text-sm outline-none rounded-sm ${fieldErrors.address ? 'border-red-500' : 'border-gray-300 focus:border-gray-900'}`} />
                     {fieldErrors.address && <p className="text-red-500 text-xs mt-1">{fieldErrors.address}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <input type="text" placeholder="City" value={shippingAddress.city} onChange={(e) => handleShippingChange('city', e.target.value)} disabled={!hasItems || loading} className={`v-input disabled:bg-gray-50 ${fieldErrors.city ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`} />
+                      <input type="text" placeholder="City" value={shippingAddress.city} onChange={(e) => handleShippingChange('city', e.target.value)} className={`w-full border px-4 py-3 text-sm outline-none rounded-sm ${fieldErrors.city ? 'border-red-500' : 'border-gray-300 focus:border-gray-900'}`} />
                       {fieldErrors.city && <p className="text-red-500 text-xs mt-1">{fieldErrors.city}</p>}
                     </div>
-                    <input type="text" placeholder="Postal code" value={shippingAddress.postalCode} onChange={(e) => handleShippingChange('postalCode', e.target.value)} disabled={!hasItems || loading} className="v-input disabled:bg-gray-50" />
+                    <input type="text" placeholder="Postal code" value={shippingAddress.postalCode} onChange={(e) => handleShippingChange('postalCode', e.target.value)} className="border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 rounded-sm" />
                   </div>
                   <div>
-                    <input type="tel" placeholder="Phone" value={shippingAddress.phone} onChange={(e) => handleShippingChange('phone', e.target.value)} disabled={!hasItems || loading} className={`v-input disabled:bg-gray-50 ${fieldErrors.phone ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`} />
+                    <input type="tel" placeholder="Phone" value={shippingAddress.phone} onChange={(e) => handleShippingChange('phone', e.target.value)} className={`w-full border px-4 py-3 text-sm outline-none rounded-sm ${fieldErrors.phone ? 'border-red-500' : 'border-gray-300 focus:border-gray-900'}`} />
                     {fieldErrors.phone && <p className="text-red-500 text-xs mt-1">{fieldErrors.phone}</p>}
                   </div>
                 </div>
               </div>
 
               {/* 3. Payment */}
-              <div className="v-form-card">
+              <div className="bg-white rounded-sm p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                  <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">3</span>
                   Payment
                 </h2>
                 <div className="space-y-3">
                   {PAYMENT_METHODS.map(method => (
-                    <label
-                      key={method.id}
-                      className={[
-                        "flex items-center gap-4 p-4 border rounded-lg v-motion",
-                        !hasItems
-                          ? "opacity-50 cursor-not-allowed bg-gray-50 border-gray-200"
-                          : selectedPayment === method.id
-                            ? "border-gray-900 bg-gray-50 cursor-pointer"
-                            : "border-gray-200 hover:border-gray-300 cursor-pointer hover:-translate-y-[1px]",
-                      ].join(" ")}
-                    >
-                      <input type="radio" name="payment" value={method.id} checked={selectedPayment === method.id} onChange={(e) => setSelectedPayment(e.target.value)} className="w-4 h-4" disabled={!hasItems || loading} />
+                    <label key={method.id} className={`flex items-center gap-4 p-4 border-2 rounded-sm cursor-pointer transition-all ${selectedPayment === method.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <input type="radio" name="payment" value={method.id} checked={selectedPayment === method.id} onChange={(e) => setSelectedPayment(e.target.value)} className="w-4 h-4" />
                       <div className="flex-1">
                         <span className="font-medium text-gray-900 block">{method.name}</span>
                         <p className="text-xs text-gray-500 mt-0.5">{method.description}</p>
@@ -491,14 +419,8 @@ const buildOrderPayload = () => {
 
             {/* Order Summary */}
             <div className="lg:w-96">
-              <div className="v-card-luxury p-6 sticky top-28">
-                <div className="flex items-end justify-between mb-6">
-                  <div>
-                    <p className="v-eyebrow mb-2">Order</p>
-                    <h2 className="text-lg font-semibold text-gray-900">Summary</h2>
-                  </div>
-                  <Link to="/shop" className="text-xs text-gray-600 hover:text-gray-900 underline">Continue shopping</Link>
-                </div>
+              <div className="bg-white rounded-sm p-6 shadow-md sticky top-24">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
 
                 {cartItems.length === 0 ? (
                   <p className="text-sm text-gray-500 mb-4">Your cart is empty</p>
@@ -508,15 +430,30 @@ const buildOrderPayload = () => {
                     const hasPrescription = prescription && (prescription.sph_r || prescription.sph_l || prescription.cyl_r || prescription.cyl_l || prescription.axis || prescription.pd)
                     const itemName = item.products?.name || item.name || 'Product'
                     const itemPrice = parseFloat(item.products?.price || item.price || 0)
-                    const itemImage = item.products?.image || item.products?.product_variants?.[0]?.images?.[0] || item.image || null
+                    const itemImageRaw =
+                      item.products?.image ||
+                      item.products?.product_variants?.[0]?.images?.[0] ||
+                      item.image ||
+                      null
+                    const itemImage = resolveImageUrl(itemImageRaw)
 
                     return (
                       <div key={index} className="flex gap-3 pb-4 mb-4 border-b border-gray-100">
                         <div className="w-12 h-12 bg-gray-100 rounded-sm overflow-hidden flex-shrink-0">
-                          {itemImage
-                            ? <img src={itemImage} alt="" className="w-full h-full object-cover" />
-                            : <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No img</div>
-                          }
+                          {itemImage ? (
+                            <img
+                              src={itemImage}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">—</div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{itemName}</p>
@@ -542,8 +479,8 @@ const buildOrderPayload = () => {
                 {/* Discount Code */}
                 <div className="mb-4 pb-4 border-b border-gray-100">
                   <div className="flex gap-2">
-                    <input type="text" placeholder="Discount code" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} disabled={!hasItems || discountApplied || loading} className="v-input !py-2 disabled:bg-gray-50" />
-                    <button onClick={applyDiscount} disabled={!hasItems || loading || discountApplied || !discountCode} className="v-btn-secondary !py-2.5 !px-4">Apply</button>
+                    <input type="text" placeholder="Discount code" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} disabled={discountApplied} className="flex-1 border border-gray-300 px-3 py-2 text-sm outline-none rounded-sm disabled:bg-gray-100" />
+                    <button onClick={applyDiscount} disabled={discountApplied || !discountCode} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 rounded-sm disabled:opacity-50">Apply</button>
                   </div>
                   {discountApplied && (
                     <p className="text-green-600 text-xs mt-2 flex items-center gap-1">
@@ -554,29 +491,29 @@ const buildOrderPayload = () => {
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="tabular-nums">${subtotal.toFixed(2)}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>}
-                  <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className={shipping === 0 ? 'text-green-600' : ''}>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+                  {discountSafe > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${discountSafe.toFixed(2)}</span></div>}
+                  <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className={shipping === 0 ? 'text-green-600' : ''}>{shipping === 0 ? (cartIsEmpty ? '$0.00' : 'FREE') : `$${shipping.toFixed(2)}`}</span></div>
                   <div className="border-t border-gray-200 pt-2 mt-2">
-                    <div className="flex justify-between font-semibold text-base"><span>Total</span><span className="tabular-nums">${total.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold text-base"><span>Total</span><span>${total.toFixed(2)}</span></div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 my-6">
-                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase text-gray-700"><ShieldCheck size={14} className="mr-2" /> Secure</span>
-                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase text-gray-700"><Truck size={14} className="mr-2" /> Shipping</span>
-                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase text-gray-700"><RotateCcw size={14} className="mr-2" /> Returns</span>
+                <div className="flex items-center justify-center gap-4 my-4 py-3 border-y border-gray-100">
+                  <div className="flex items-center gap-1 text-xs text-gray-500"><Shield size={14} /> Secure</div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500"><Truck size={14} /> Fast Shipping</div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500"><RotateCcw size={14} /> Easy Returns</div>
                 </div>
 
                 <button
                   onClick={handleCheckout}
-                  disabled={!hasItems || loading}
-                  className="w-full v-btn-primary !rounded-xl !tracking-[0.12em] !text-[12px]"
+                  disabled={cartIsEmpty || loading}
+                  className="w-full py-3.5 text-sm font-medium rounded-sm transition-all bg-gray-900 text-white hover:bg-gray-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
                   {ctaLabel()}
                 </button>
 
-                <Link to="/shop" className="flex items-center justify-center gap-1 text-sm text-gray-600 hover:text-gray-900 mt-5">
+                <Link to="/shop" className="flex items-center justify-center gap-1 text-sm text-gray-500 hover:text-gray-900 mt-4">
                   <ChevronLeft size={16} /> Continue Shopping
                 </Link>
               </div>

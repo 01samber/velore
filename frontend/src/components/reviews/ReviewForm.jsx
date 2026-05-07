@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Star } from 'lucide-react'
 import apiClient from '../../shared/services/apiClient'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function ReviewForm({ isOpen, onClose, orderId, productId, productName, productImage, onSuccess }) {
   const [rating, setRating] = useState(0)
@@ -81,17 +82,25 @@ export default function ReviewForm({ isOpen, onClose, orderId, productId, produc
 
           {productName && (
             <div className="flex items-center gap-3 mb-5 p-3 border border-gray-200 rounded-sm">
-              {productImage ? (
-                <img
-                  src={productImage}
-                  alt={productName}
-                  className="w-14 h-14 object-cover rounded-sm bg-gray-100"
-                />
-              ) : (
-                <div className="w-14 h-14 bg-gray-100 rounded-sm flex items-center justify-center text-xs text-gray-400">
-                  —
-                </div>
-              )}
+              {(() => {
+                const src = resolveImageUrl(productImage)
+                return src ? (
+                  <img
+                    src={src}
+                    alt={productName}
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                    className="w-14 h-14 object-cover rounded-sm bg-gray-100"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-sm bg-gray-100 border border-gray-200 flex items-center justify-center text-xs text-gray-500">
+                    —
+                  </div>
+                )
+              })()}
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-400">Product</p>
                 <p className="text-sm font-medium text-gray-900">{productName}</p>

@@ -5,7 +5,7 @@ import apiClient from '../../shared/services/apiClient'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
-function CheckoutForm({ amount, orderNumber, onSuccess }) {
+function CheckoutForm({ amount, orderNumber, onSuccess, onError = () => {} }) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
@@ -58,6 +58,7 @@ function CheckoutForm({ amount, orderNumber, onSuccess }) {
       onSuccess(paymentIntent.id)
     } catch (err) {
       setError(err?.message || err?.error || 'Payment failed')
+      onError(err?.message || err?.error || 'Payment failed')
     } finally {
       setProcessing(false)
     }
@@ -94,7 +95,7 @@ function CheckoutForm({ amount, orderNumber, onSuccess }) {
   )
 }
 
-export default function StripeCheckout({ amount, orderNumber, onSuccess }) {
+export default function StripeCheckout({ amount, orderNumber, onSuccess, onError = () => {} }) {
   if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
     return (
       <div className="text-center p-4 text-sm text-gray-600">
@@ -105,7 +106,7 @@ export default function StripeCheckout({ amount, orderNumber, onSuccess }) {
 
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutForm amount={amount} orderNumber={orderNumber} onSuccess={onSuccess} />
+      <CheckoutForm amount={amount} orderNumber={orderNumber} onSuccess={onSuccess} onError={onError} />
     </Elements>
   )
 }

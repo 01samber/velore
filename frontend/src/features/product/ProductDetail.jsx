@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import shopService from "../shop/shopService"
 import cartService from "../cart/cartService"
 import sizeguide from '../../assets/sizeguide.png'
-import { extractApiError } from "../../shared/services/apiHelpers"
+import { resolveImageUrl } from "../../shared/utils/imageUrl"
 function AccordionItem({ title, children }) {
   const [open, setOpen] = useState(false)
   return (
@@ -178,11 +178,10 @@ export default function ProductDetail() {
   const { id } = useParams()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [notice, setNotice] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
   // ✅ Track selected variant
   const [selectedVariant, setSelectedVariant] = useState(null)
 
@@ -205,7 +204,6 @@ export default function ProductDetail() {
 
   const loadProduct = async () => {
     setLoading(true)
-    setError(null)
     try {
       const result = await shopService.getProduct(id)
       setProduct(result.data)
@@ -214,10 +212,21 @@ export default function ProductDetail() {
         setSelectedVariant(result.data.product_variants[0])
       }
     } catch (error) {
-      const apiErr = extractApiError(error, 'Failed to load product')
-      console.error('Failed to load product:', apiErr)
-      setError(apiErr.message)
-      setProduct(null)
+      console.error('Failed to load product:', error)
+      try {
+        const allProducts = await shopService.getProducts()
+        const found = allProducts.data.find(p =>
+          p.product_id == id || p.productId == id || p.id == id
+        )
+        if (found) {
+          setProduct(found)
+          if (found?.product_variants?.length > 0) {
+            setSelectedVariant(found.product_variants[0])
+          }
+        } else setProduct(null)
+      } catch {
+        setProduct(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -226,7 +235,6 @@ export default function ProductDetail() {
 const handleAddToCart = async () => {
   const productId = product.product_id
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-  setNotice(null)
 
   if (token) {
     setAddingToCart(true)
@@ -237,11 +245,10 @@ const handleAddToCart = async () => {
         quantity,
         prescriptionData: prescription
       })
-      setNotice('Added to cart.')
+      setJustAdded(true)
+      window.setTimeout(() => setJustAdded(false), 1200)
     } catch (error) {
-      const apiErr = extractApiError(error, 'Failed to add to cart')
-      console.error('Failed to add to cart:', apiErr)
-      setNotice(apiErr.message)
+      console.error('Failed to add to cart:', error)
     } finally {
       setAddingToCart(false)
     }
@@ -263,30 +270,17 @@ const handleAddToCart = async () => {
       })
     }
     localStorage.setItem('guestCart', JSON.stringify(localCart))
-    setNotice('Added to cart.')
+    setJustAdded(true)
+    window.setTimeout(() => setJustAdded(false), 1200)
   }
 }
 
   if (loading) {
-    return (
-      <div className="v-page flex justify-center items-center min-h-screen px-6">
-        <div className="v-card-luxury p-6 text-sm text-gray-700">Loading…</div>
-      </div>
-    )
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
   if (!product) {
-    return (
-      <div className="v-page p-10 text-sm">
-        <p className={error ? "text-red-700" : "text-gray-600"}>
-          {error || 'Product not found'}
-        </p>
-        <div className="mt-4 flex gap-3">
-          <button onClick={loadProduct} className="underline text-gray-900">Retry</button>
-          <Link to="/shop" className="underline text-gray-600">Back to shop</Link>
-        </div>
-      </div>
-    )
+    return <div className="p-10 text-sm text-gray-500">Product not found</div>
   }
 
   // ✅ Pull images from product_variants instead of non-existent product.image
@@ -313,13 +307,7 @@ const handleAddToCart = async () => {
   const isGlasses = ['eyeglasses', 'glasses', 'sunglasses'].includes(categoryName)
 
   return (
-    <div className="v-page">
     <div className="px-4 md:px-16 py-8 max-w-6xl mx-auto">
-      {notice && (
-        <div className="mb-6 p-4 v-surface text-sm text-gray-800">
-          {notice}
-        </div>
-      )}
 
       {/* ── NEW: Size Guide Modal ── */}
       {sizeGuideOpen && <SizeGuideModal onClose={() => setSizeGuideOpen(false)} />}
@@ -329,37 +317,59 @@ const handleAddToCart = async () => {
         {/* LEFT — Images */}
         <div className="flex gap-3">
           <div className="flex flex-col gap-2">
-            {images.length > 0 ? images.map((img, i) => (
+            {images.map((img, i) => {
+              const src = resolveImageUrl(img)
+              return (
               <button
                 key={i}
                 onClick={() => setSelectedImage(i)}
-                className={`w-16 h-16 border-2 rounded-xl overflow-hidden flex-shrink-0 transition ${selectedImage === i ? 'border-gray-900' : 'border-[rgba(var(--velore-border-soft),0.95)]'}`}
+                className={`w-16 h-16 border-2 overflow-hidden flex-shrink-0 ${selectedImage === i ? 'border-gray-900' : 'border-gray-200'}`}
               >
-                <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                {src ? (
+                  <img
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
+                    —
+                  </div>
+                )}
               </button>
-            )) : (
-              <div className="w-16 h-16 border border-[rgba(var(--velore-border-soft),0.95)] v-card-media rounded-xl flex items-center justify-center text-xs text-gray-500">—</div>
-            )}
+              )
+            })}
           </div>
-          <div className="flex-1 v-card-luxury overflow-hidden">
-            {images[selectedImage] ? (
-              <img
-                src={images[selectedImage]}
-                alt={product.name}
-                loading={selectedImage === 0 ? "eager" : "lazy"}
-                decoding="async"
-                className="w-full h-80 md:h-[520px] object-cover"
-              />
-            ) : (
-              <div className="w-full h-80 md:h-[520px] v-card-media flex items-center justify-center text-sm text-gray-500">
-                No image available
-              </div>
-            )}
+          <div className="flex-1 border border-gray-100 bg-gray-50">
+            {(() => {
+              const src = resolveImageUrl(images[selectedImage])
+              return src ? (
+                <img
+                  src={src}
+                  alt={product.name}
+                  decoding="async"
+                  fetchPriority="high"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none"
+                  }}
+                  className="w-full h-80 md:h-[520px] object-cover"
+                />
+              ) : (
+                <div className="w-full h-80 md:h-[520px] flex items-center justify-center text-sm text-gray-500">
+                  No image available
+                </div>
+              )
+            })()}
           </div>
         </div>
 
         {/* RIGHT — Info */}
-        <div className="flex flex-col gap-4 v-card-luxury p-6 md:p-7">
+        <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-snug mb-2">{product.name}</h1>
             <p className="text-lg font-medium text-gray-900">${finalPrice}</p>
@@ -518,23 +528,22 @@ const handleAddToCart = async () => {
           </div>
 
           {/* Add to Cart */}
-          <div className="flex items-center gap-4 pt-4 border-t border-[rgba(var(--velore-border-soft),0.9)]">
-            <div className="flex border border-[rgba(var(--velore-border-soft),0.95)] rounded-xl overflow-hidden bg-[rgb(var(--velore-pearl))]">
-              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-700 hover:bg-[rgba(var(--velore-accent),0.06)] transition">−</button>
+          <div className="flex items-center gap-4 pt-2 border-t border-gray-200">
+            <div className="flex border border-gray-300">
+              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-600 hover:bg-gray-100">−</button>
               <span className="px-4 py-2 text-sm">{quantity}</span>
-              <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-700 hover:bg-[rgba(var(--velore-accent),0.06)] transition">+</button>
+              <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-600 hover:bg-gray-100">+</button>
             </div>
             <button
               onClick={handleAddToCart}
               disabled={addingToCart || stockQty === 0}
-              className="flex-1 v-btn-primary !rounded-xl !py-3 disabled:!opacity-60"
+              className="flex-1 bg-black text-white py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400"
             >
-              {addingToCart ? 'Adding...' : stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
+              {addingToCart ? 'Adding...' : justAdded ? 'Added!' : stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
             </button>
           </div>
         </div>
       </div>
-    </div>
     </div>
   )
 }

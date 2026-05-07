@@ -2,45 +2,28 @@ import { useEffect, useMemo, useState } from 'react'
 import { X, LogOut, Award, Clock, ChevronDown, ChevronUp, Heart, MessageCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import apiClient from '../../shared/services/apiClient'
-import { extractApiError, isApiSuccess } from '../../shared/services/apiHelpers'
 import ReviewForm from '../reviews/ReviewForm'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpen, user: userProp }) {
   const [activeTab, setActiveTab] = useState('account')
   const [orders, setOrders] = useState([])
   const [pointsData, setPointsData] = useState({ currentPoints: 0, transactions: [] })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [profile, setProfile] = useState(null)
   const [expandedOrder, setExpandedOrder] = useState(null)
   const [selectedReviewTarget, setSelectedReviewTarget] = useState(null)
 
   const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
-  const user = userProp || profile || storedUser
-
-  const loadProfile = async () => {
-    try {
-      setError(null)
-      const res = await apiClient.get('/auth/profile')
-      if (isApiSuccess(res) && res?.data) setProfile(res.data)
-    } catch (e) {
-      // If endpoint is missing or unauthorized, show readable message.
-      const apiErr = extractApiError(e, 'Failed to load profile')
-      setError(apiErr.message)
-      setProfile(null)
-    }
-  }
+  const user = userProp || storedUser
 
   const loadOrders = async () => {
     setLoading(true)
     try {
-      setError(null)
       const response = await apiClient.get('/orders')
-      const list = response?.data || []
+      const list = response?.data || response?.orders || response || []
       setOrders(Array.isArray(list) ? list : [])
     } catch (error) {
-      const apiErr = extractApiError(error, 'Failed to fetch orders')
-      setError(apiErr.message)
+      console.error('Failed to fetch orders', error)
       setOrders([])
     } finally {
       setLoading(false)
@@ -49,28 +32,22 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
 
   const loadPoints = async () => {
     try {
-      setError(null)
       const response = await apiClient.get('/loyalty/points')
-      const data = response?.data || {}
+      const data = response?.data || response || {}
       setPointsData({
         currentPoints: data.currentPoints || data.current_points || 0,
         transactions: data.transactions || []
       })
     } catch (error) {
-      const apiErr = extractApiError(error, 'Failed to fetch loyalty points')
-      setError(apiErr.message)
+      console.error('Failed to fetch loyalty points', error)
       setPointsData({ currentPoints: 0, transactions: [] })
     }
   }
 
   useEffect(() => {
     if (!isOpen) return
-    const t = setTimeout(() => {
-      loadProfile()
-      loadOrders()
-      loadPoints()
-    }, 0)
-    return () => clearTimeout(t)
+    loadOrders()
+    loadPoints()
   }, [isOpen])
 
   useEffect(() => {
@@ -134,11 +111,6 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-sm">
-              {error}
-            </div>
-          )}
           {activeTab === 'account' ? (
             <div className="space-y-4">
               <div>
@@ -200,9 +172,7 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                           <p className="text-sm font-medium text-gray-900">{tx.type || 'transaction'}</p>
                           <p className="text-sm font-medium text-gray-900">{tx.points > 0 ? '+' : ''}{tx.points} pts</p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(tx.created_at || Date.now()).toLocaleString()}</p>
                       </div>
                     ))
                   )}
@@ -224,9 +194,7 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                     >
                       <div>
                         <p className="text-sm font-medium text-gray-900 mb-1">Order #{String(order.order_id || order.id)}</p>
-                        <p className="text-sm text-gray-600">
-                          Date: {(order.order_date || order.created_at || order.createdAt) ? new Date(order.order_date || order.created_at || order.createdAt).toLocaleDateString() : '—'}
-                        </p>
+                        <p className="text-sm text-gray-600">Date: {new Date(order.order_date || order.created_at || order.createdAt || Date.now()).toLocaleDateString()}</p>
                         <p className="text-sm text-gray-600">Status: {order.status || 'pending'}</p>
                         <p className="text-sm text-gray-600">Total: ${Number(order.total || order.total_price || order.amount || 0).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Points earned: +{Math.floor(Number(order.total || order.total_price || order.amount || 0) / 100) * 10}</p>
@@ -242,15 +210,30 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                           (order.items || order.orders_items || []).map((item) => (
                             <div key={item.order_item_id || item.product_id} className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
-                                {(item.image || item.products?.image || item.products?.product_variants?.[0]?.images?.[0]) ? (
-                                  <img
-                                    src={item.image || item.products?.image || item.products?.product_variants?.[0]?.images?.[0]}
-                                    alt={item.products?.name || item.name || 'Product'}
-                                    className="w-10 h-10 rounded-sm object-cover bg-gray-100"
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-sm bg-gray-100 flex items-center justify-center text-xs text-gray-400">—</div>
-                                )}
+                                {(() => {
+                                  const raw =
+                                    item.image ||
+                                    item.products?.image ||
+                                    item.products?.product_variants?.[0]?.images?.[0] ||
+                                    null
+                                  const src = resolveImageUrl(raw)
+                                  return src ? (
+                                    <img
+                                      src={src}
+                                      alt={item.products?.name || item.name || 'Product'}
+                                      loading="lazy"
+                                      decoding="async"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                      }}
+                                      className="w-10 h-10 rounded-sm object-cover bg-gray-100"
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-sm bg-gray-100 border border-gray-200 flex items-center justify-center text-xs text-gray-500">
+                                      —
+                                    </div>
+                                  )
+                                })()}
                                 <div>
                                   <p className="text-sm text-gray-900">{item.products?.name || item.name || 'Product'}</p>
                                   <p className="text-xs text-gray-500">Qty: {item.quantity || 1}</p>
