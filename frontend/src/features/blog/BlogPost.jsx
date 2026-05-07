@@ -62,11 +62,17 @@ export default function BlogPost() {
   return (
     <div className="min-h-screen bg-white">
       <div className="relative h-[40vh] md:h-[50vh] w-full">
-        <img 
-          src={post.image || 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=1200'} 
-          alt={post.title} 
-          className="w-full h-full object-cover"
-        />
+        {post.image ? (
+          <img 
+            src={post.image} 
+            alt={post.title} 
+            fetchPriority="high"
+            decoding="async"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100" />
+        )}
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 flex items-center">
           <div className="px-6 md:px-16 max-w-4xl mx-auto w-full">

@@ -252,7 +252,7 @@ const handleAddToCart = async () => {
       existing.quantity += quantity
       existing.prescriptionData = prescription
     } else {
-      const firstImage = product.product_variants?.[0]?.images?.[0] || 'https://via.placeholder.com/80'
+      const firstImage = product.product_variants?.[0]?.images?.[0] || ''
       localCart.push({
         productId,
         name: product.name,
@@ -268,13 +268,17 @@ const handleAddToCart = async () => {
 }
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
+    return (
+      <div className="v-page flex justify-center items-center min-h-screen px-6">
+        <div className="v-card-luxury p-6 text-sm text-gray-700">Loading…</div>
+      </div>
+    )
   }
 
   if (!product) {
     return (
-      <div className="p-10 text-sm">
-        <p className={error ? "text-red-600" : "text-gray-500"}>
+      <div className="v-page p-10 text-sm">
+        <p className={error ? "text-red-700" : "text-gray-600"}>
           {error || 'Product not found'}
         </p>
         <div className="mt-4 flex gap-3">
@@ -287,7 +291,7 @@ const handleAddToCart = async () => {
 
   // ✅ Pull images from product_variants instead of non-existent product.image
   const allImages = product.product_variants?.flatMap(v => v.images || []).filter(Boolean)
-  const images = allImages?.length > 0 ? allImages : ['https://via.placeholder.com/400']
+  const images = allImages?.length > 0 ? allImages : []
 
   // ✅ Get unique sizes from variants
   const sizes = [...new Set(product.product_variants?.map(v => v.size).filter(Boolean))]
@@ -309,9 +313,10 @@ const handleAddToCart = async () => {
   const isGlasses = ['eyeglasses', 'glasses', 'sunglasses'].includes(categoryName)
 
   return (
+    <div className="v-page">
     <div className="px-4 md:px-16 py-8 max-w-6xl mx-auto">
       {notice && (
-        <div className="mb-6 p-3 bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-sm">
+        <div className="mb-6 p-4 v-surface text-sm text-gray-800">
           {notice}
         </div>
       )}
@@ -324,23 +329,37 @@ const handleAddToCart = async () => {
         {/* LEFT — Images */}
         <div className="flex gap-3">
           <div className="flex flex-col gap-2">
-            {images.map((img, i) => (
+            {images.length > 0 ? images.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setSelectedImage(i)}
-                className={`w-16 h-16 border-2 overflow-hidden flex-shrink-0 ${selectedImage === i ? 'border-gray-900' : 'border-gray-200'}`}
+                className={`w-16 h-16 border-2 rounded-xl overflow-hidden flex-shrink-0 transition ${selectedImage === i ? 'border-gray-900' : 'border-[rgba(var(--velore-border-soft),0.95)]'}`}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" />
+                <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               </button>
-            ))}
+            )) : (
+              <div className="w-16 h-16 border border-[rgba(var(--velore-border-soft),0.95)] v-card-media rounded-xl flex items-center justify-center text-xs text-gray-500">—</div>
+            )}
           </div>
-          <div className="flex-1 border border-gray-100">
-            <img src={images[selectedImage]} alt={product.name} className="w-full h-80 md:h-[520px] object-cover" />
+          <div className="flex-1 v-card-luxury overflow-hidden">
+            {images[selectedImage] ? (
+              <img
+                src={images[selectedImage]}
+                alt={product.name}
+                loading={selectedImage === 0 ? "eager" : "lazy"}
+                decoding="async"
+                className="w-full h-80 md:h-[520px] object-cover"
+              />
+            ) : (
+              <div className="w-full h-80 md:h-[520px] v-card-media flex items-center justify-center text-sm text-gray-500">
+                No image available
+              </div>
+            )}
           </div>
         </div>
 
         {/* RIGHT — Info */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 v-card-luxury p-6 md:p-7">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-snug mb-2">{product.name}</h1>
             <p className="text-lg font-medium text-gray-900">${finalPrice}</p>
@@ -499,22 +518,23 @@ const handleAddToCart = async () => {
           </div>
 
           {/* Add to Cart */}
-          <div className="flex items-center gap-4 pt-2 border-t border-gray-200">
-            <div className="flex border border-gray-300">
-              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-600 hover:bg-gray-100">−</button>
+          <div className="flex items-center gap-4 pt-4 border-t border-[rgba(var(--velore-border-soft),0.9)]">
+            <div className="flex border border-[rgba(var(--velore-border-soft),0.95)] rounded-xl overflow-hidden bg-[rgb(var(--velore-pearl))]">
+              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-700 hover:bg-[rgba(var(--velore-accent),0.06)] transition">−</button>
               <span className="px-4 py-2 text-sm">{quantity}</span>
-              <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-600 hover:bg-gray-100">+</button>
+              <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-700 hover:bg-[rgba(var(--velore-accent),0.06)] transition">+</button>
             </div>
             <button
               onClick={handleAddToCart}
               disabled={addingToCart || stockQty === 0}
-              className="flex-1 bg-black text-white py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+              className="flex-1 v-btn-primary !rounded-xl !py-3 disabled:!opacity-60"
             >
               {addingToCart ? 'Adding...' : stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
             </button>
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }

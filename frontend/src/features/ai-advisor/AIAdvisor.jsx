@@ -113,7 +113,7 @@ const AiAdvisor = () => {
         </div>
         <div className="flex-1 order-1 md:order-2">
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-lg">
-            <img src={pic1} alt="Face scan" className="w-full h-full object-cover" />
+            <img src={pic1} alt="Face scan" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center text-center p-4 bg-black/20">
               <p className="text-white text-xl sm:text-2xl font-medium drop-shadow-md">Precisely curated<br/>recommendations</p>
             </div>
@@ -125,7 +125,7 @@ const AiAdvisor = () => {
       <section className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center gap-8 md:gap-12">
         <div className="flex-1">
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-lg">
-            <img src={pic2} alt="Try on" className="w-full h-full object-cover" />
+            <img src={pic2} alt="Try on" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center text-center p-4 bg-black/20">
               <p className="text-white text-xl sm:text-2xl font-medium drop-shadow-md">Real-time<br/>Try Ons</p>
             </div>
@@ -153,7 +153,7 @@ const AiAdvisor = () => {
         </div>
         <div className="flex-1 order-1 md:order-2">
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-lg">
-            <img src={pic3} alt="Privacy" className="w-full h-full object-cover" />
+            <img src={pic3} alt="Privacy" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center text-center p-4 bg-black/20">
               <p className="text-white text-xl sm:text-2xl font-medium drop-shadow-md">Private and<br/>secure</p>
             </div>

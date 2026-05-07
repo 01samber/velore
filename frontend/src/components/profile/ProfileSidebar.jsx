@@ -242,7 +242,15 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                           (order.items || order.orders_items || []).map((item) => (
                             <div key={item.order_item_id || item.product_id} className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
-                                <img src={item.image || item.products?.image || item.products?.product_variants?.[0]?.images?.[0] || 'https://via.placeholder.com/40'} alt={item.products?.name || item.name || 'Product'} className="w-10 h-10 rounded-sm object-cover bg-gray-100" />
+                                {(item.image || item.products?.image || item.products?.product_variants?.[0]?.images?.[0]) ? (
+                                  <img
+                                    src={item.image || item.products?.image || item.products?.product_variants?.[0]?.images?.[0]}
+                                    alt={item.products?.name || item.name || 'Product'}
+                                    className="w-10 h-10 rounded-sm object-cover bg-gray-100"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-sm bg-gray-100 flex items-center justify-center text-xs text-gray-400">—</div>
+                                )}
                                 <div>
                                   <p className="text-sm text-gray-900">{item.products?.name || item.name || 'Product'}</p>
                                   <p className="text-xs text-gray-500">Qty: {item.quantity || 1}</p>

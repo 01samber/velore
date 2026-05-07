@@ -14,6 +14,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [termsError, setTermsError] = useState("");
 
   const validateForm = () => {
     const errors = {};
@@ -61,7 +62,7 @@ export default function Signup() {
     e.preventDefault();
 
     if (!agreed) {
-      alert("You must agree to the terms.");
+      setTermsError("Please agree to the Terms of Use to continue.");
       return;
     }
 
@@ -70,6 +71,7 @@ export default function Signup() {
 
     setLoading(true);
     setError("");
+    setTermsError("");
 
     try {
       await authService.register({
@@ -88,7 +90,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row w-screen h-screen bg-white overflow-hidden font-sans">
+    <div className="flex flex-col md:flex-row w-screen h-screen overflow-hidden font-sans bg-[rgb(var(--velore-canvas))]">
       {/* LEFT IMAGE */}
       <div className="relative w-full h-64 md:h-full md:w-[45%] overflow-hidden">
         <img
@@ -102,16 +104,20 @@ export default function Signup() {
       </div>
 
       {/* RIGHT FORM */}
-      <div className="flex-1 flex items-center justify-center px-6 py-6 md:px-12 bg-white overflow-y-auto">
-        <form onSubmit={handleCreate} className="w-full max-w-sm">
-          <h1 className="text-4xl md:text-5xl font-black tracking-wide uppercase text-black mb-7">
-            CREATE ACCOUNT
-          </h1>
+      <div className="flex-1 flex items-center justify-center px-6 py-6 md:px-12 bg-[rgb(var(--velore-canvas))] overflow-y-auto">
+        <form onSubmit={handleCreate} className="w-full max-w-sm v-card-luxury p-6 md:p-7">
+          <h1 className="v-title mb-2">Create your account</h1>
+          <p className="v-muted mb-7">Fast checkout, order tracking, and saved favorites.</p>
 
           {/* General Error */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
+            <div className="v-banner-error mb-4">
               {error}
+            </div>
+          )}
+          {termsError && (
+            <div className="v-banner-error mb-4">
+              {termsError}
             </div>
           )}
 
@@ -128,13 +134,11 @@ export default function Signup() {
                   setFirstName(e.target.value);
                   setFieldErrors({ ...fieldErrors, firstName: '' });
                 }}
-                className={`w-full border px-3 py-2.5 text-sm outline-none transition ${
-                  fieldErrors.firstName ? 'border-red-500' : 'border-gray-300 focus:border-black'
-                }`}
+                className={`v-input ${fieldErrors.firstName ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
                 placeholder="John"
               />
               {fieldErrors.firstName && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</p>
+                <p className="v-field-error">{fieldErrors.firstName}</p>
               )}
             </div>
             <div className="w-1/2">
@@ -148,13 +152,11 @@ export default function Signup() {
                   setLastName(e.target.value);
                   setFieldErrors({ ...fieldErrors, lastName: '' });
                 }}
-                className={`w-full border px-3 py-2.5 text-sm outline-none transition ${
-                  fieldErrors.lastName ? 'border-red-500' : 'border-gray-300 focus:border-black'
-                }`}
+                className={`v-input ${fieldErrors.lastName ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
                 placeholder="Doe"
               />
               {fieldErrors.lastName && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>
+                <p className="v-field-error">{fieldErrors.lastName}</p>
               )}
             </div>
           </div>
@@ -171,13 +173,11 @@ export default function Signup() {
                 setEmail(e.target.value);
                 setFieldErrors({ ...fieldErrors, email: '' });
               }}
-              className={`w-full border px-3 py-2.5 text-sm outline-none transition ${
-                fieldErrors.email ? 'border-red-500' : 'border-gray-300 focus:border-black'
-              }`}
+              className={`v-input ${fieldErrors.email ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
               placeholder="you@example.com"
             />
             {fieldErrors.email && (
-              <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
+              <p className="v-field-error">{fieldErrors.email}</p>
             )}
           </div>
 
@@ -193,13 +193,11 @@ export default function Signup() {
                 setPassword(e.target.value);
                 setFieldErrors({ ...fieldErrors, password: '' });
               }}
-              className={`w-full border px-3 py-2.5 text-sm outline-none transition ${
-                fieldErrors.password ? 'border-red-500' : 'border-gray-300 focus:border-black'
-              }`}
+              className={`v-input ${fieldErrors.password ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
               placeholder="••••••••"
             />
             {fieldErrors.password && (
-              <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>
+              <p className="v-field-error">{fieldErrors.password}</p>
             )}
             <p className="text-xs text-gray-400 mt-1">
               Min 8 characters, uppercase, lowercase, and a number
@@ -207,28 +205,32 @@ export default function Signup() {
           </div>
 
           {/* CHECKBOX */}
-          <div className="flex items-start gap-2 mb-6">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-1 accent-black"
-            />
-            <p className="text-xs text-gray-600">
-              I have read and agree to the{" "}
-              <span className="underline cursor-pointer hover:text-black">
-                Terms of Use
+          <div className="mb-6">
+            <label className="v-check cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => { setAgreed(e.target.checked); setTermsError('') }}
+                className="peer sr-only"
+              />
+              <span className="v-check-box" aria-hidden="true">
+                <svg className="v-check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
               </span>
-            </p>
+              <span className="text-xs text-gray-600">
+                I have read and agree to the <span className="underline hover:text-gray-900">Terms of Use</span>
+              </span>
+            </label>
           </div>
 
           {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white py-3.5 text-sm font-bold tracking-widest uppercase hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full v-btn-primary !py-3"
           >
-            {loading ? "CREATING..." : "CREATE"}
+            {loading ? "Creating…" : "Create account"}
           </button>
 
           {/* SIGN IN LINK */}

@@ -51,7 +51,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row w-screen h-screen overflow-hidden bg-white font-sans">
+    <div className="flex flex-col md:flex-row w-screen h-screen overflow-hidden font-sans bg-[rgb(var(--velore-canvas))]">
       {/* LEFT IMAGE */}
       <div className="relative w-full h-64 md:h-full md:w-[45%] overflow-hidden">
         <img
@@ -65,15 +65,15 @@ export default function Login() {
       </div>
 
       {/* RIGHT FORM */}
-      <div className="flex-1 flex items-center justify-center px-6 py-6 md:px-12 bg-white overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center px-6 py-6 md:px-12 bg-[rgb(var(--velore-canvas))] overflow-y-auto">
         <div className="w-full max-w-sm">
-          <h1 className="text-4xl md:text-5xl font-black tracking-wide uppercase text-black mb-8">
-            LOGIN
-          </h1>
+          <div className="v-card-luxury p-6 md:p-7">
+          <h1 className="v-title mb-2">Welcome back</h1>
+          <p className="v-muted mb-8">Sign in to continue your shopping experience.</p>
 
           {/* General Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
+            <div className="v-banner-error mb-4">
               {error}
             </div>
           )}
@@ -90,13 +90,11 @@ export default function Login() {
                 setEmail(e.target.value);
                 setFieldErrors({ ...fieldErrors, email: '' });
               }}
-              className={`w-full border px-3 py-2.5 text-sm text-black outline-none transition duration-200 ${
-                fieldErrors.email ? 'border-red-500' : 'border-gray-300 focus:border-black'
-              }`}
+              className={`v-input ${fieldErrors.email ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
               placeholder="you@example.com"
             />
             {fieldErrors.email && (
-              <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
+              <p className="v-field-error">{fieldErrors.email}</p>
             )}
           </div>
 
@@ -112,17 +110,15 @@ export default function Login() {
                 setPassword(e.target.value);
                 setFieldErrors({ ...fieldErrors, password: '' });
               }}
-              className={`w-full border px-3 py-2.5 text-sm text-black outline-none transition duration-200 ${
-                fieldErrors.password ? 'border-red-500' : 'border-gray-300 focus:border-black'
-              }`}
+              className={`v-input ${fieldErrors.password ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500/10' : ''}`}
               placeholder="••••••••"
             />
             {fieldErrors.password && (
-              <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>
+              <p className="v-field-error">{fieldErrors.password}</p>
             )}
             <Link
               to="/forgot-password"
-              className="inline-block mt-2 text-xs text-gray-500 underline hover:text-black transition"
+              className="inline-block mt-2 text-xs text-gray-500 underline hover:text-gray-900 transition"
             >
               Forgot your password?
             </Link>
@@ -132,9 +128,9 @@ export default function Login() {
           <button
             onClick={handleSignIn}
             disabled={loading}
-            className="w-full bg-black text-white py-3.5 text-sm font-bold tracking-widest uppercase hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full v-btn-primary !py-3"
           >
-            {loading ? "SIGNING IN..." : "SIGN IN"}
+            {loading ? "Signing in…" : "Sign in"}
           </button>
 
           {/* Link */}
@@ -142,11 +138,12 @@ export default function Login() {
             New Customer?{" "}
             <Link
               to="/signup"
-              className="text-black font-medium underline hover:text-gray-700"
+              className="text-gray-900 font-medium underline hover:text-gray-700"
             >
               Create My Account
             </Link>
           </p>
+          </div>
         </div>
       </div>
     </div>

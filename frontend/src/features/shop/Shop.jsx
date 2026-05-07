@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { EyewearCard } from '../../shared/components/eyewear'
 import shopService from './shopService'
 import { extractApiError } from '../../shared/services/apiHelpers'
+import { Glasses } from 'lucide-react'
 
 const MAX_PRICE = 450
 const BRANDS = ['Velore', 'Ray-Ban', 'MIU MIU']
@@ -235,86 +236,149 @@ export default function Shop() {
     return 0
   })
 
+  const hasQuery = (searchQuery || '').trim().length >= 2
+
+  const ProductSkeleton = () => (
+    <div className="v-card overflow-hidden">
+      <div className="bg-gray-100 h-40 md:h-52 animate-pulse" />
+      <div className="p-5 space-y-3">
+        <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />
+        <div className="h-4 w-4/5 bg-gray-200 rounded animate-pulse" />
+        <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+        <div className="h-9 w-full bg-gray-100 rounded-xl animate-pulse mt-2" />
+      </div>
+    </div>
+  )
+
   return (
-    <div>
+    <div className="v-page">
+      {/* ── Editorial header ── */}
+      <div className="v-section-muted">
+        <div className="v-container v-section-tight">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <p className="v-eyebrow mb-3">Shop</p>
+              <h1 className="v-h1 !text-3xl md:!text-5xl">Frames & lenses</h1>
+              <p className="v-lead mt-4 max-w-2xl">
+                Browse a curated selection of premium eyewear. Use filters to narrow your fit.
+              </p>
+              {hasQuery ? (
+                <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-700">
+                  <span className="text-gray-500">Search</span>
+                  <span className="font-medium">“{searchQuery.trim()}”</span>
+                  <button
+                    className="ml-2 text-xs text-gray-500 hover:text-gray-900 underline"
+                    onClick={() => setSearchParams(activeCategory === 'all' ? {} : { category: activeCategory })}
+                    type="button"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {showFilterBtn && (
+                <button
+                  onClick={() => setFilterOpen(true)}
+                  className="v-btn-secondary !py-2.5 !px-4"
+                  type="button"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
+                  </svg>
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="bg-gray-900 text-white text-[11px] px-2 py-0.5 rounded-full tabular-nums">{activeFilterCount}</span>
+                  )}
+                </button>
+              )}
+
+              <div className="relative">
+                <button onClick={() => setSortOpen(!sortOpen)} className="v-btn-secondary !py-2.5 !px-4" type="button" aria-haspopup="menu" aria-expanded={sortOpen}>
+                  Sort
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`w-3.5 h-3.5 transition-transform ${sortOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {sortOpen && (
+                  <div className="absolute right-0 top-12 z-50 min-w-[220px] v-popover v-popover-anim">
+                    <div className="px-4 py-3 bg-gray-50/70 border-b border-gray-200/60">
+                      <p className="v-eyebrow">Sort</p>
+                    </div>
+                    {sortOptions.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => { setSortBy(key); setSortOpen(false) }}
+                        className="v-menu-item"
+                      >
+                        <span className={sortBy === key ? 'text-gray-900 font-medium' : 'text-gray-700'}>{label}</span>
+                        {sortBy === key ? <span className="text-xs text-gray-500">Selected</span> : null}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {activeFilterCount > 0 ? (
+            <div className="mt-8 flex flex-wrap items-center gap-2">
+              <span className="v-eyebrow">Active filters</span>
+              <button onClick={resetFilters} className="text-xs text-gray-600 hover:text-gray-900 underline" type="button">
+                Clear all
+              </button>
+            </div>
+          ) : null}
+        </div>
+        <div className="v-container"><div className="v-divider" /></div>
+      </div>
+
       {/* ── Category Tab Bar ── */}
-      <div className="sticky top-[60px] z-40 bg-white border-b border-gray-200">
-        <div className="px-6 md:px-16 flex items-center gap-8 overflow-x-auto scrollbar-hide">
+      <div className="sticky top-[80px] z-40 bg-[rgb(var(--velore-pearl))]/75 backdrop-blur border-b border-[rgba(var(--velore-border-soft),0.85)]">
+        <div className="v-container flex items-center gap-3 overflow-x-auto scrollbar-hide py-3">
           {categories.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setCategory(key)}
-              className={`relative py-4 text-sm whitespace-nowrap transition-colors flex-shrink-0 ${activeCategory === key ? 'text-gray-900 font-semibold' : 'text-gray-400 hover:text-gray-700'}`}
+              className={`relative px-4 py-2 text-sm whitespace-nowrap transition-colors flex-shrink-0 rounded-full border ${
+                activeCategory === key
+                  ? 'text-gray-900 font-semibold border-gray-900 bg-[rgba(var(--velore-accent),0.06)]'
+                  : 'text-gray-600 hover:text-gray-900 border-transparent hover:border-[rgba(var(--velore-border-soft),0.95)] hover:bg-[rgba(var(--velore-accent),0.04)]'
+              }`}
             >
               {label}
-              {activeCategory === key && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 rounded-full" />}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Toolbar ── */}
-      <div className="px-6 md:px-16 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-gray-500">
-            {loading ? 'Loading...' : `Showing ${sorted.length} of ${baseProducts.length} results`}
-          </p>
-          {showFilterBtn && (
-            <button
-              onClick={() => setFilterOpen(true)}
-              className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 hover:border-gray-400 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
-              </svg>
-              Filter
-              {activeFilterCount > 0 && (
-                <span className="bg-gray-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">{activeFilterCount}</span>
-              )}
-            </button>
-          )}
-          {activeFilterCount > 0 && (
-            <button onClick={resetFilters} className="text-xs text-gray-400 hover:text-gray-700 underline">Clear all</button>
-          )}
-        </div>
-
-        {/* Sort */}
-        <div className="relative">
-          <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M6 12h12M9 17h6" />
-            </svg>
-            Sort by
-            <svg xmlns="http://www.w3.org/2000/svg" className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {sortOpen && (
-            <div className="absolute right-0 top-8 bg-white border border-gray-200 shadow-lg z-50 min-w-[180px]">
-              {sortOptions.map(({ key, label }) => (
-                <button key={key} onClick={() => { setSortBy(key); setSortOpen(false) }}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${sortBy === key ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* ── Product Grid ── */}
-      <div className="px-6 md:px-16 pb-16">
+      <div className="v-container pb-20 pt-10">
         {loading ? (
-          <div className="text-center py-24 text-gray-400 text-sm">Loading products...</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
+          </div>
         ) : error ? (
-          <div className="text-center py-24 text-red-400 text-sm">
-            {error}
-            <button onClick={() => loadProducts(activeCategory)} className="block mx-auto mt-3 text-gray-900 underline text-sm">Try again</button>
+          <div className="v-empty">
+            <p className="v-eyebrow mb-2">Shop unavailable</p>
+            <p className="v-h2 !text-xl mb-2">We couldn’t load products</p>
+            <p className="v-lead mb-6">{error}</p>
+            <button onClick={() => loadProducts(activeCategory)} className="v-btn-secondary">Retry</button>
           </div>
         ) : sorted.length === 0 ? (
-          <div className="text-center py-24 text-gray-400 text-sm">
-            No products match your filters.
-            <button onClick={resetFilters} className="block mx-auto mt-3 text-gray-900 underline text-sm">Clear filters</button>
+          <div className="v-empty">
+            <div className="mx-auto mb-4 w-12 h-12 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700">
+              <Glasses size={20} aria-hidden="true" />
+            </div>
+            <p className="v-eyebrow mb-2">No matches</p>
+            <p className="v-h2 !text-xl mb-2">Nothing fits these filters</p>
+            <p className="v-lead mb-7">Try widening the price range, removing one filter, or browsing the full collection.</p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button onClick={resetFilters} className="v-btn-secondary" type="button">Reset filters</button>
+              <Link to="/shop" className="v-btn-ghost">View all</Link>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -327,12 +391,15 @@ export default function Shop() {
       {filterOpen && <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setFilterOpen(false)} />}
 
       {/* ── Filter Panel ── */}
-      <div className={`fixed top-0 left-0 h-full w-80 bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${filterOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed top-0 left-0 h-full w-80 bg-[rgb(var(--velore-pearl))] z-50 flex flex-col transition-transform duration-300 ease-in-out ${filterOpen ? 'translate-x-0' : '-translate-x-full'} border-r border-[rgba(var(--velore-border-soft),0.9)]`}>
 
         {/* Panel header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 flex-shrink-0">
-          <h2 className="font-semibold text-gray-900">Filter</h2>
-          <button onClick={() => setFilterOpen(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
+        <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200/70 flex-shrink-0">
+          <div>
+            <p className="v-eyebrow mb-1">Refine</p>
+            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          </div>
+          <button onClick={() => setFilterOpen(false)} className="v-icon-btn text-gray-700" aria-label="Close filters" type="button">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -351,12 +418,12 @@ export default function Shop() {
             />
             <div className="flex gap-3">
               {['priceMin', 'priceMax'].map((key) => (
-                <div key={key} className="flex items-center border border-gray-200 px-2 py-1.5 flex-1">
+                <div key={key} className="flex items-center border border-gray-200/70 rounded-lg px-3 py-2 flex-1 bg-white">
                   <span className="text-gray-400 text-sm mr-1">$</span>
                   <input
                     type="number" value={filters[key]}
                     onChange={e => setFilters(prev => ({ ...prev, [key]: Number(e.target.value) }))}
-                    className="w-full outline-none text-sm text-gray-700"
+                    className="w-full outline-none text-sm text-gray-700 bg-transparent"
                   />
                 </div>
               ))}
@@ -381,11 +448,12 @@ export default function Shop() {
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {['Small', 'Medium', 'Large'].map(s => (
                     <button key={s} onClick={() => toggle('sizes', s)}
-                      className={`px-3 py-1.5 text-xs border transition-colors ${filters.sizes.includes(s) ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-300 text-gray-600 hover:border-gray-500'}`}>
+                      type="button"
+                      className={`px-3 py-2 text-[11px] tracking-[0.14em] uppercase rounded-full border transition ${filters.sizes.includes(s) ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}>
                       {s === 'Small' ? 'S' : s === 'Medium' ? 'M' : 'L'}
                     </button>
                   ))}
-                  <button className="px-3 py-1.5 text-xs border border-gray-200 text-gray-400 hover:border-gray-400 transition-colors">
+                  <button type="button" className="px-3 py-2 text-[11px] tracking-[0.14em] uppercase rounded-full border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 transition">
                     Size Guide
                   </button>
                 </div>
@@ -427,10 +495,11 @@ export default function Shop() {
         </div>
 
         {/* Apply */}
-        <div className="px-6 py-5 border-t border-gray-200 flex-shrink-0">
-          <button onClick={applyFilters} className="w-full bg-gray-900 text-white py-3 text-sm font-medium hover:bg-gray-700 transition-colors">
-            Apply
-          </button>
+        <div className="px-6 py-6 border-t border-[rgba(var(--velore-border-soft),0.9)] flex-shrink-0 bg-[rgb(var(--velore-pearl))]">
+          <div className="flex gap-3">
+            <button onClick={resetFilters} className="v-btn-secondary flex-1 !py-2.5" type="button">Reset</button>
+            <button onClick={applyFilters} className="v-btn-primary flex-1 !py-2.5" type="button">Apply</button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,16 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useFavorites } from '../../contexts'
 import cartService from "../../../features/cart/cartService";
 import { extractApiError } from '../../services/apiHelpers'
+import { Check } from 'lucide-react'
 
 export default function EyewearCard({ id, productId, product_id, image, name, price, description, colors }) {
   const { toggleFavorite, isFavorite } = useFavorites()
   const [addingToCart, setAddingToCart] = useState(false)
+  const [added, setAdded] = useState(false)
   const [error, setError] = useState(null)
   
   const productIdFinal = product_id || productId || id
   const favorited = isFavorite(productIdFinal)
+
+  const safePrice = useMemo(() => {
+    const n = Number(price)
+    return Number.isFinite(n) ? n : 0
+  }, [price])
+
+  useEffect(() => {
+    if (!added) return
+    const t = setTimeout(() => setAdded(false), 1200)
+    return () => clearTimeout(t)
+  }, [added])
 
   const handleAddToCart = async (e) => {
   e.preventDefault()
@@ -36,10 +49,7 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
     }
     
     localStorage.setItem('guestCart', JSON.stringify(localCart))
-    
-    const btn = e.target
-    btn.textContent = 'Added!'
-    setTimeout(() => { btn.textContent = 'Add to cart' }, 1000)
+    setAdded(true)
     return  // ← STOP here
   }
   
@@ -51,10 +61,7 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
       productId: Number(productIdFinal),
       quantity: 1
     })
-    
-    const btn = e.target
-    btn.textContent = 'Added!'
-    setTimeout(() => { btn.textContent = 'Add to cart' }, 1000)
+    setAdded(true)
   } catch (error) {
     const apiErr = extractApiError(error, 'Failed to add to cart')
     setError(apiErr.message)
@@ -64,48 +71,65 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
 }
 
   return (
-    <div className="bg-blue-100 rounded-sm relative flex flex-col w-full">
+    <div className="v-card-luxury v-hover-lift relative flex flex-col w-full overflow-hidden group">
       <Link
         to="/ai-advisor"
-        className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm text-xs px-2 py-1 rounded-full text-gray-600 hover:bg-white transition z-10"
+        className="absolute top-4 right-4 bg-[rgb(var(--velore-pearl))]/80 backdrop-blur-sm text-[11px] px-3 py-1.5 rounded-full text-gray-800 hover:bg-[rgb(var(--velore-pearl))] transition z-10 border border-[rgba(var(--velore-border-soft),0.9)] tracking-[0.12em] uppercase"
       >
         Virtual Try-on
       </Link>
 
       <Link to={`/product/${productIdFinal}`} className="block">
-        <div className="p-3 md:p-6">
-          <img src={image} alt={name} className="w-full object-contain h-32 md:h-48" />
-        </div>
-
-        <div className="flex gap-1 md:gap-2 px-3 md:px-4 mb-2 md:mb-3">
-          {colors?.map((color, index) => (
-            <div
-              key={index}
-              className="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-200"
-              style={{ backgroundColor: color }}
+        <div className="p-4 md:p-6 v-card-media border-b border-[rgba(var(--velore-border-soft),0.9)]">
+          {image ? (
+            <img
+              src={image}
+              alt={name}
+              loading="lazy"
+              decoding="async"
+              className="w-full object-contain h-32 md:h-52 transition-transform duration-300 group-hover:scale-[1.02]"
             />
-          ))}
+          ) : (
+            <div className="w-full h-32 md:h-52 flex items-center justify-center text-gray-400 text-sm">
+              No image
+            </div>
+          )}
         </div>
 
-        <div className="px-3 md:px-4 mb-3 md:mb-4">
-          <h3 className="font-medium text-xs md:text-sm text-gray-900 mb-1 line-clamp-2">{name}</h3>
-          <p className="text-xs md:text-sm font-semibold text-gray-900 mb-1">${parseFloat(price).toFixed(2)}</p>
-          <p className="text-xs text-gray-500 hidden md:block">{description}</p>
+        {colors?.length ? (
+          <div className="flex gap-2 px-4 md:px-6 pt-4">
+            {colors.slice(0, 5).map((color, index) => (
+              <div
+                key={index}
+                className="w-3.5 h-3.5 rounded-full border border-gray-200/70"
+                style={{ backgroundColor: color }}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <div className="px-4 md:px-6 py-4">
+          <p className="v-eyebrow mb-2">Velore</p>
+          <h3 className="text-sm md:text-[15px] font-medium text-gray-900 mb-2 line-clamp-2">{name}</h3>
+          <p className="v-price">${safePrice.toFixed(2)}</p>
+          <p className="v-caption mt-2 hidden md:block line-clamp-2">{description}</p>
         </div>
       </Link>
 
-      <div className="flex items-center gap-2 px-3 md:px-4 pb-3 md:pb-4 mt-auto">
+      <div className="flex items-center gap-2 px-4 md:px-6 pb-5 mt-auto">
         <button 
           onClick={handleAddToCart}
           disabled={addingToCart}
-          className="flex-1 bg-black text-white text-xs md:text-sm py-1.5 md:py-2 px-2 md:px-4 hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+          className="flex-1 v-btn-primary !py-2.5 !px-4 !text-[12px] md:!text-[12px] inline-flex items-center justify-center gap-2"
         >
-          {addingToCart ? 'Adding...' : 'Add to cart'}
+          {addingToCart ? 'Adding…' : added ? (<><Check size={16} aria-hidden="true" /> Added</>) : 'Add to cart'}
         </button>
 
         <button
           onClick={() => toggleFavorite({ id: productIdFinal, image, name, price, description, colors })}
-          className="transition-colors"
+          className="v-icon-btn text-gray-700 hover:text-gray-900"
+          aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
         >
           <svg xmlns="http://www.w3.org/2000/svg"
             className="w-4 h-4 md:w-6 md:h-6"
@@ -121,7 +145,7 @@ export default function EyewearCard({ id, productId, product_id, image, name, pr
       </div>
 
       {error && (
-        <div className="px-3 md:px-4 pb-3 text-xs text-red-700">
+        <div className="px-4 md:px-6 pb-5 text-xs text-red-700">
           {error}
         </div>
       )}

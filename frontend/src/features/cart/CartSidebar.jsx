@@ -9,7 +9,7 @@ const FREE_SHIPPING_THRESHOLD = 50
 function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
   const name = item.products?.name || item.product?.name || item.name || 'Product'
   const price = parseFloat(item.products?.price || item.product?.price || item.price || 0)
-  const image = item.products?.product_variants?.[0]?.images?.[0] || item.product?.image || item.image || 'https://via.placeholder.com/80'
+  const image = item.products?.product_variants?.[0]?.images?.[0] || item.product?.image || item.image || ''
   const itemId = item.cart_item_id
   const productId = item.product_id || item.productId
   const quantity = item.quantity || 0
@@ -20,7 +20,11 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
   return (
     <div className="flex gap-4 py-4 border-b border-gray-200">
       <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden">
-        <img src={image} alt={name} className="w-full h-full object-cover" />
+        {image ? (
+          <img src={image} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
