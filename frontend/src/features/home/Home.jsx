@@ -1,9 +1,11 @@
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Testimonials from '../../shared/components/eyewear/Testimonials'
 import { EyewearCard } from '../../shared/components/eyewear'
 import sketchImage from '../../assets/Veloresketch.jpeg'
+import heroImage from '../../assets/heropic.jpg'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 import shopService from '../shop/shopService'
 import apiClient from '../../shared/services/apiClient'
 
@@ -57,8 +59,8 @@ export default function Home() {
             .filter((blog) => blog.is_published === true)
             .map((blog) => ({
               id: blog.post_id,
-              image: blog.image || 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600',
-              title: blog.title
+              image: blog.image || null,
+              title: blog.title,
             }))
         : []
       setBlogs(mapped)
@@ -74,9 +76,11 @@ export default function Home() {
       <section className="relative w-full h-[65vh] md:h-[85vh] overflow-hidden -mt-20">
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-10" />
         <img
-          src="https://images.unsplash.com/photo-1731983061288-a851eb9c9cb7?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGdsYXNzZXMlMjBtb2RlbHxlbnwwfHwwfHx8MA%3D%3D"
+          src={heroImage}
           alt="Eyewear"
           className="w-full h-full object-cover object-[center_25%]"
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 md:px-16 pb-0">
           <h1 className="text-3xl md:text-6xl font-bold text-white leading-tight mb-4 max-w-md">
@@ -111,7 +115,7 @@ export default function Home() {
           <>
             {/* Mobile — horizontal scroll */}
             <div className="flex md:hidden gap-3 overflow-x-auto pb-4 scrollbar-hide">
-              {newProducts.map((product, index) => (
+              {newProducts.map((product) => (
                 <div key={product.product_id} className="w-[45vw] flex-shrink-0">
                   <EyewearCard {...product} />
                 </div>
@@ -183,7 +187,18 @@ export default function Home() {
         <div className="flex md:hidden gap-4 overflow-x-auto pb-4 scrollbar-hide">
           {blogs.map((blog) => (
             <Link key={blog.id} to={`/blogs/${blog.id}`} className="min-w-[70vw] flex-shrink-0 relative group overflow-hidden rounded-sm">
-              <img src={blog.image} alt={blog.title} className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <img
+                src={resolveImageUrl(blog.image) || ''}
+                alt={blog.title}
+                className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-100"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  const img = e.currentTarget
+                  img.onerror = null
+                  img.src = ''
+                }}
+              />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                 <p className="text-white text-sm font-medium">{blog.title}</p>
               </div>
@@ -193,7 +208,18 @@ export default function Home() {
         <div className="hidden md:grid grid-cols-3 gap-6">
           {blogs.map((blog) => (
             <Link key={blog.id} to={`/blogs/${blog.id}`} className="relative group overflow-hidden rounded-sm">
-              <img src={blog.image} alt={blog.title} className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <img
+                src={resolveImageUrl(blog.image) || ''}
+                alt={blog.title}
+                className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-100"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  const img = e.currentTarget
+                  img.onerror = null
+                  img.src = ''
+                }}
+              />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                 <p className="text-white text-sm font-medium">{blog.title}</p>
               </div>

@@ -58,6 +58,7 @@ function CheckoutForm({ amount, orderNumber, onSuccess, onError }) {
       onSuccess(paymentIntent.id)
     } catch (err) {
       setError(err?.message || err?.error || 'Payment failed')
+      onError?.(err?.message || err?.error || 'Payment failed')
     } finally {
       setProcessing(false)
     }

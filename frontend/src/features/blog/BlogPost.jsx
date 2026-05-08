@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ChevronLeft, Calendar, User, Clock, Tag } from 'lucide-react'
 import apiClient from '../../shared/services/apiClient'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function BlogPost() {
   const { id } = useParams()
@@ -40,9 +41,16 @@ export default function BlogPost() {
     <div className="min-h-screen bg-white">
       <div className="relative h-[40vh] md:h-[50vh] w-full">
         <img 
-          src={post.image || 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=1200'} 
+          src={resolveImageUrl(post.image) || ''}
           alt={post.title} 
           className="w-full h-full object-cover"
+          fetchPriority="high"
+          decoding="async"
+          onError={(e) => {
+            const img = e.currentTarget
+            img.onerror = null
+            img.src = ''
+          }}
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 flex items-center">

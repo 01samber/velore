@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import apiClient from '../../shared/services/apiClient'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function Blogs() {
   const [blogs, setBlogs] = useState([])
@@ -37,9 +38,16 @@ export default function Blogs() {
               <Link key={blog.post_id} to={`/blogs/${blog.post_id}`} className="group">
                 <div className="aspect-[4/3] rounded-sm overflow-hidden mb-4">
                   <img 
-                    src={blog.image || 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600'} 
+                    src={resolveImageUrl(blog.image) || ''}
                     alt={blog.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      const img = e.currentTarget
+                      img.onerror = null
+                      img.src = ''
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">

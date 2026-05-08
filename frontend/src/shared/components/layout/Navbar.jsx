@@ -1,172 +1,184 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../../assets/logoEye-blue.png";
-import { Search, User, Heart, ShoppingCart, Menu, X } from "lucide-react";
-import { useFavorites } from "../../contexts";
-import apiClient from "../../../shared/services/apiClient";
-import ProfileSidebar from "../../../features/profile/ProfileSidebar";
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import {
+  BadgeInfo,
+  BookOpen,
+  Glasses,
+  Headphones,
+  Heart,
+  Menu,
+  Search,
+  ShoppingCart,
+  User,
+  X,
+} from 'lucide-react'
+
+import logo from '../../../assets/logoEye-blue.png'
+import apiClient from '../../../shared/services/apiClient'
+import { resolveImageUrl } from '../../utils/imageUrl'
+import { useFavorites } from '../../contexts'
+import ProfileSidebar from '../../../features/profile/ProfileSidebar'
+import { CurrencyMenu } from '../ui'
 
 export default function Navbar({ onCartOpen, onContactOpen }) {
-  const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [currency, setCurrency] = useState("USD");
-  const [rates, setRates] = useState({});
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const inputRef = useRef(null);
-  const searchTimeoutRef = useRef(null);
-  const location = useLocation();
+  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const inputRef = useRef(null)
+  const searchTimeoutRef = useRef(null)
+  const location = useLocation()
 
   const { favorites } = useFavorites();
   const isHome = location.pathname === "/";
   const isTransparent = isHome && !scrolled;
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, [location.pathname]);
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    setIsLoggedIn(!!token)
+  }, [location.pathname])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!e.target.closest(".search-container")) {
-        setSearchResults([]);
-        setSearchQuery("");
+      if (!e.target.closest('.search-container')) {
+        setSearchResults([])
+        setSearchQuery('')
       }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
-    setScrolled(window.scrollY > 50);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    fetch("https://api.exchangerate-api.com/v4/latest/USD")
-      .then((res) => res.json())
-      .then((data) => setRates(data.rates))
-      .catch((err) => console.log(err));
-  }, []);
+    setScrolled(window.scrollY > 50)
+  }, [location.pathname])
 
   const handleSearchClick = () => {
     if (!searchOpen) {
-      setSearchOpen(true);
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setSearchOpen(true)
+      setTimeout(() => inputRef.current?.focus(), 100)
     } else {
-      setSearchOpen(false);
-      setSearchQuery("");
-      setSearchResults([]);
+      setSearchOpen(false)
+      setSearchQuery('')
+      setSearchResults([])
     }
-  };
+  }
 
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
+    const value = e.target.value
+    setSearchQuery(value)
 
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
 
     if (value.length < 2) {
-      setSearchResults([]);
-      return;
+      setSearchResults([])
+      return
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
-      setSearchLoading(true);
+      setSearchLoading(true)
       try {
-        const result = await apiClient.get(`/products/search?q=${encodeURIComponent(value)}`);
-        setSearchResults(result?.data || []);
-      } catch (error) {
-        console.error("Search failed:", error);
-        setSearchResults([]);
+        const result = await apiClient.get(`/products/search?q=${encodeURIComponent(value)}`)
+        setSearchResults(result?.data || [])
+      } catch {
+        setSearchResults([])
       } finally {
-        setSearchLoading(false);
+        setSearchLoading(false)
       }
-    }, 300);
-  };
+    }, 300)
+  }
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
-      setSearchQuery("");
-      setSearchResults([]);
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchOpen(false)
+      setSearchQuery('')
+      setSearchResults([])
     }
-  };
+  }
 
   const handleCartClick = () => {
-    if (onCartOpen) onCartOpen();
-  };
+    onCartOpen?.()
+  }
 
   const handleContactClick = (e) => {
-    e.preventDefault();
-    if (onContactOpen) onContactOpen();
-    setMenuOpen(false);
-  };
+    e.preventDefault()
+    onContactOpen?.()
+    setMenuOpen(false)
+  }
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("guestCart");
-    localStorage.removeItem("guestFavorites");
-    setIsLoggedIn(false);
-    window.location.href = "/";
-  };
+    localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('guestCart')
+    localStorage.removeItem('guestFavorites')
+    setIsLoggedIn(false)
+    window.location.href = '/'
+  }
 
-  const handleAboutClick = (e) => {
-    if (location.pathname === "/") {
-      e.preventDefault();
-      const aboutSection = document.getElementById("about-us");
-      if (aboutSection) aboutSection.scrollIntoView({ behavior: "smooth" });
-    }
-    setMenuOpen(false);
-  };
-
-  const handleBlogsClick = (e) => {
-    if (location.pathname === "/") {
-      e.preventDefault();
-      const latestNewsSection = document.getElementById("latest-news");
-      if (latestNewsSection) latestNewsSection.scrollIntoView({ behavior: "smooth" });
-    }
-    setMenuOpen(false);
-  };
+  const navItemClass = ({ isActive }) =>
+    [
+      'inline-flex items-center gap-2 text-sm font-medium v-motion rounded-xl px-2.5 py-1.5',
+      isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-800 hover:text-gray-900 hover:bg-black/5',
+      isActive ? (isTransparent ? 'bg-white/10 text-white' : 'bg-black/5') : '',
+    ].join(' ')
 
   return (
     <>
       <nav
-        className={`sticky top-0 z-40 transition-all duration-500 ${
-          isTransparent ? "bg-transparent" : "bg-white shadow-sm"
-        }`}
+        className={[
+          'sticky top-0 z-40 v-motion',
+          isTransparent
+            ? 'bg-transparent'
+            : 'bg-[rgb(var(--velore-pearl))]/80 backdrop-blur border-b border-[rgba(var(--velore-border-soft),0.85)]',
+        ].join(' ')}
       >
         <div className="flex items-center justify-between px-6 py-3">
           <button
-            className={`md:hidden p-1 transition-colors ${
-              isTransparent ? "text-white" : "text-gray-700"
-            }`}
+            className={`md:hidden p-1 transition-colors ${isTransparent ? 'text-white' : 'text-gray-700'}`}
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
 
           <div className="hidden md:flex gap-6 flex-1">
-            <NavLink to="/shop" className={({ isActive }) => `text-sm transition-colors ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"} ${isActive ? "font-semibold" : "font-normal"}`}>Shop</NavLink>
-            <NavLink to="/#about-us" onClick={handleAboutClick} className={({ isActive }) => `text-sm transition-colors ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"} ${isActive ? "font-semibold" : "font-normal"}`}>About</NavLink>
-            <NavLink to="/#latest-news" onClick={handleBlogsClick} className={({ isActive }) => `text-sm transition-colors ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"} ${isActive ? "font-semibold" : "font-normal"}`}>Blogs</NavLink>
-            <button onClick={handleContactClick} className={`text-sm transition-colors bg-transparent border-none cursor-pointer ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"}`}>Contact</button>
+            <NavLink to="/shop" className={navItemClass} aria-label="Shop">
+              <Glasses size={16} aria-hidden="true" />
+              <span>Shop</span>
+            </NavLink>
+            <NavLink to="/about" className={navItemClass} aria-label="About Velore">
+              <BadgeInfo size={16} aria-hidden="true" />
+              <span>About</span>
+            </NavLink>
+            <NavLink to="/blogs" className={navItemClass} aria-label="Velore Journal">
+              <BookOpen size={16} aria-hidden="true" />
+              <span>Journal</span>
+            </NavLink>
+            <button
+              type="button"
+              onClick={handleContactClick}
+              className={[
+                'inline-flex items-center gap-2 text-sm font-medium v-motion rounded-xl px-2.5 py-1.5 bg-transparent border-none cursor-pointer',
+                isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-800 hover:text-gray-900 hover:bg-black/5',
+              ].join(' ')}
+              aria-label="Contact Velore"
+            >
+              <Headphones size={16} aria-hidden="true" />
+              <span>Contact</span>
+            </button>
           </div>
 
           <Link to="/" className="flex-1 md:flex-none flex justify-center">
@@ -174,15 +186,13 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
           </Link>
 
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className={`hidden md:block bg-transparent border-none text-xs cursor-pointer outline-none transition-colors ${isTransparent ? "text-white" : "text-gray-500"}`}
-            >
-              <option value="USD" className="text-gray-900 bg-white">UNITED STATES (USD $)</option>
-              <option value="EUR" className="text-gray-900 bg-white">EUROPE (EUR €)</option>
-              <option value="LBP" className="text-gray-900 bg-white">LEBANON (LBP ل.ل)</option>
-            </select>
+            <div className="hidden md:block">
+              <CurrencyMenu
+                ariaLabel="Select currency"
+                align="right"
+                triggerClassName={isTransparent ? "text-white border-white/30 hover:bg-white/10" : ""}
+              />
+            </div>
 
             <div className="flex items-center relative search-container">
               <form onSubmit={handleSearchSubmit} className="flex items-center">
@@ -208,7 +218,7 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
               </form>
 
               {searchOpen && searchResults.length > 0 && (
-                <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-sm shadow-lg z-50 max-h-96 overflow-y-auto">
+                <div className="absolute top-full right-0 mt-2 w-80 z-50 max-h-96 overflow-y-auto v-popover v-popover-anim">
                   {searchResults.map((product) => (
                     <Link
                       key={product.product_id}
@@ -218,12 +228,19 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
                         setSearchQuery("");
                         setSearchResults([]);
                       }}
-                      className="flex items-center gap-3 p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      className="flex items-center gap-3 p-3 border-b border-[rgba(var(--velore-border-soft),0.7)] last:border-b-0 hover:bg-[rgba(var(--velore-accent),0.06)]"
                     >
                       <img
-                        src={product.product_variants?.[0]?.images?.[0] || "https://via.placeholder.com/40"}
+                        src={resolveImageUrl(product.product_variants?.[0]?.images?.[0]) || ''}
                         alt={product.name}
-                        className="w-10 h-10 object-cover rounded-sm"
+                        className="w-10 h-10 object-cover rounded-xl bg-[rgba(var(--velore-accent),0.04)] border border-[rgba(var(--velore-border-soft),0.85)]"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          const img = e.currentTarget
+                          img.onerror = null
+                          img.src = ''
+                        }}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
@@ -238,7 +255,7 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
               )}
 
               {searchOpen && searchQuery.length >= 2 && searchResults.length === 0 && !searchLoading && (
-                <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-sm shadow-lg z-50 p-4 text-center text-sm text-gray-500">
+                <div className="absolute top-full right-0 mt-2 w-80 z-50 p-4 text-center text-sm text-gray-500 v-popover v-popover-anim">
                   No products found
                 </div>
               )}
@@ -297,11 +314,33 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className={`md:hidden flex flex-col px-6 pb-4 gap-4 border-t ${isTransparent ? "border-white/20 bg-black/20 backdrop-blur-sm" : "border-gray-200 bg-white"}`}>
-            <NavLink to="/shop" onClick={() => setMenuOpen(false)} className={({ isActive }) => `text-sm transition-colors ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"} ${isActive ? "font-semibold" : "font-normal"}`}>Shop</NavLink>
-            <NavLink to="/#about-us" onClick={handleAboutClick} className={({ isActive }) => `text-sm transition-colors ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"} ${isActive ? "font-semibold" : "font-normal"}`}>About</NavLink>
-            <NavLink to="/#latest-news" onClick={handleBlogsClick} className={({ isActive }) => `text-sm transition-colors ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"} ${isActive ? "font-semibold" : "font-normal"}`}>Blogs</NavLink>
-            <button onClick={handleContactClick} className={`text-left text-sm transition-colors bg-transparent border-none cursor-pointer ${isTransparent ? "text-white hover:text-white/70" : "text-gray-800 hover:text-gray-500"}`}>Contact</button>
+          <div
+            className={`md:hidden flex flex-col px-6 pb-4 gap-4 border-t ${
+              isTransparent
+                ? 'border-white/20 bg-black/20 backdrop-blur-sm'
+                : 'border-[rgba(var(--velore-border-soft),0.85)] bg-[rgb(var(--velore-pearl))]/90 backdrop-blur'
+            }`}
+          >
+            <NavLink to="/shop" onClick={() => setMenuOpen(false)} className={navItemClass}>
+              <Glasses size={16} aria-hidden="true" />
+              <span>Shop</span>
+            </NavLink>
+            <NavLink to="/about" onClick={() => setMenuOpen(false)} className={navItemClass}>
+              <BadgeInfo size={16} aria-hidden="true" />
+              <span>About</span>
+            </NavLink>
+            <NavLink to="/blogs" onClick={() => setMenuOpen(false)} className={navItemClass}>
+              <BookOpen size={16} aria-hidden="true" />
+              <span>Journal</span>
+            </NavLink>
+            <button
+              type="button"
+              onClick={handleContactClick}
+              className={navItemClass({ isActive: false })}
+            >
+              <Headphones size={16} aria-hidden="true" />
+              <span>Contact</span>
+            </button>
 
             <div className="flex items-center gap-4 pt-2 border-t border-gray-200">
               {isLoggedIn ? (
@@ -327,15 +366,13 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
               </Link>
             </div>
 
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className={`bg-transparent border-none text-xs cursor-pointer outline-none w-fit ${isTransparent ? "text-white" : "text-gray-500"}`}
-            >
-              <option value="USD" className="text-gray-900 bg-white">UNITED STATES (USD $)</option>
-              <option value="EUR" className="text-gray-900 bg-white">EUROPE (EUR €)</option>
-              <option value="LBP" className="text-gray-900 bg-white">LEBANON (LBP ل.ل)</option>
-            </select>
+            <div className="pt-1">
+              <CurrencyMenu
+                ariaLabel="Select currency"
+                align="left"
+                triggerClassName={isTransparent ? "text-white border-white/30 hover:bg-white/10" : ""}
+              />
+            </div>
           </div>
         )}
       </nav>
@@ -347,5 +384,5 @@ export default function Navbar({ onCartOpen, onContactOpen }) {
         onContactOpen={onContactOpen}
       />
     </>
-  );
+  )
 }

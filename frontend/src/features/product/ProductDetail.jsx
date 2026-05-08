@@ -1,8 +1,10 @@
 import { useParams, Link } from "react-router-dom"
 import { useState, useEffect } from "react"
+import { Check } from 'lucide-react'
 import shopService from "../shop/shopService"
 import cartService from "../cart/cartService"
 import sizeguide from '../../assets/sizeguide.png'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 function AccordionItem({ title, children }) {
   const [open, setOpen] = useState(false)
   return (
@@ -180,6 +182,7 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
   // ✅ Track selected variant
   const [selectedVariant, setSelectedVariant] = useState(null)
 
@@ -237,19 +240,14 @@ const handleAddToCart = async () => {
   if (token) {
     setAddingToCart(true)
     try {
-      console.log('Sending to cart:', { 
-        productId, 
-        variantId: selectedVariant?.variant_id,
-        quantity,
-        prescriptionData: prescription
-      })
       await cartService.addItem({ 
         productId, 
         variantId: selectedVariant?.variant_id,
         quantity,
         prescriptionData: prescription
       })
-      alert('Added to cart!')
+      setJustAdded(true)
+      setTimeout(() => setJustAdded(false), 1200)
     } catch (error) {
       console.error('Failed to add to cart:', error)
     } finally {
@@ -262,18 +260,19 @@ const handleAddToCart = async () => {
       existing.quantity += quantity
       existing.prescriptionData = prescription
     } else {
-      const firstImage = product.product_variants?.[0]?.images?.[0] || 'https://via.placeholder.com/80'
+      const firstImage = product.product_variants?.[0]?.images?.[0] || null
       localCart.push({
         productId,
         name: product.name,
         price: product.price,
-        image: firstImage,
+        image: firstImage || '',
         quantity,
         prescriptionData: prescription,
       })
     }
     localStorage.setItem('guestCart', JSON.stringify(localCart))
-    alert('Added to cart!')
+    setJustAdded(true)
+    setTimeout(() => setJustAdded(false), 1200)
   }
 }
 
@@ -285,9 +284,9 @@ const handleAddToCart = async () => {
     return <div className="p-10 text-sm text-gray-500">Product not found</div>
   }
 
-  // ✅ Pull images from product_variants instead of non-existent product.image
-  const allImages = product.product_variants?.flatMap(v => v.images || []).filter(Boolean)
-  const images = allImages?.length > 0 ? allImages : ['https://via.placeholder.com/400']
+  // Pull images from variants; resolve backend uploads safely
+  const rawImages = product.product_variants?.flatMap(v => v.images || []).filter(Boolean) || []
+  const images = rawImages
 
   // ✅ Get unique sizes from variants
   const sizes = [...new Set(product.product_variants?.map(v => v.size).filter(Boolean))]
@@ -325,12 +324,33 @@ const handleAddToCart = async () => {
                 onClick={() => setSelectedImage(i)}
                 className={`w-16 h-16 border-2 overflow-hidden flex-shrink-0 ${selectedImage === i ? 'border-gray-900' : 'border-gray-200'}`}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={resolveImageUrl(img) || ''}
+                  alt=""
+                  className="w-full h-full object-cover bg-gray-100"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    const el = e.currentTarget
+                    el.onerror = null
+                    el.src = ''
+                  }}
+                />
               </button>
             ))}
           </div>
           <div className="flex-1 border border-gray-100">
-            <img src={images[selectedImage]} alt={product.name} className="w-full h-80 md:h-[520px] object-cover" />
+            <img
+              src={resolveImageUrl(images[selectedImage]) || ''}
+              alt={product.name}
+              className="w-full h-80 md:h-[520px] object-cover bg-gray-100"
+              decoding="async"
+              onError={(e) => {
+                const el = e.currentTarget
+                el.onerror = null
+                el.src = ''
+              }}
+            />
           </div>
         </div>
 
@@ -505,7 +525,12 @@ const handleAddToCart = async () => {
               disabled={addingToCart || stockQty === 0}
               className="flex-1 bg-black text-white py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400"
             >
-              {addingToCart ? 'Adding...' : stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
+              {addingToCart ? 'Adding...' : justAdded ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Check size={16} aria-hidden="true" />
+                  Added
+                </span>
+              ) : stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
             </button>
           </div>
         </div>

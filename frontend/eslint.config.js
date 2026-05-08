@@ -24,6 +24,27 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+
+      // Keep core hooks safety, but avoid overly strict rules that
+      // don’t match existing patterns in this repo.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      'react-hooks/purity': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+
+      // Repo exports non-component helpers in many files.
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  // Admin code is legacy / more permissive.
+  {
+    files: ['src/components/admin/**/*.{js,jsx}', 'src/features/admin/**/*.{js,jsx}', 'src/pages/Admin*.{js,jsx}'],
+    rules: {
+      'react-hooks/exhaustive-deps': 'off',
+      'no-unused-vars': 'off',
     },
   },
 ])

@@ -90,7 +90,7 @@ export default function Shop() {
     loadProducts(activeCategory)
   }, [activeCategory])
 
-  const loadProducts = async (category) => {
+  const loadProducts = async () => {
   setLoading(true)
   setError(null)
   try {
@@ -104,8 +104,7 @@ export default function Shop() {
       params.category_id = categoryMap[activeCategory]
     }
     const response = await shopService.getProducts(params)
-console.log('API response:', response.data)  // ← add this
-setAllProducts(response.data)
+    setAllProducts(response.data)
 
   } catch (err) {
     setError('Failed to load products')
@@ -288,7 +287,7 @@ setAllProducts(response.data)
               className="w-full accent-gray-900 mb-3"
             />
             <div className="flex gap-3">
-              {['priceMin', 'priceMax'].map((key, i) => (
+              {['priceMin', 'priceMax'].map((key) => (
                 <div key={key} className="flex items-center border border-gray-200 px-2 py-1.5 flex-1">
                   <span className="text-gray-400 text-sm mr-1">$</span>
                   <input

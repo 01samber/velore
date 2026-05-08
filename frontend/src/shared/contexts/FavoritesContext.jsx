@@ -49,11 +49,6 @@ export function FavoritesProvider({ children }) {
     loadFavorites()
   }
 
-  const loadGuestFavorites = () => {
-    const guestFavorites = JSON.parse(localStorage.getItem('guestFavorites') || '[]')
-    setFavorites(guestFavorites)
-  }
-
   const toggleFavorite = async (product) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     const exists = favorites.find(f => String(f.id) === String(product.id))

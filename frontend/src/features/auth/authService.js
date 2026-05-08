@@ -1,6 +1,5 @@
 import apiClient from '../../shared/services/apiClient'
 import cartService from '../cart/cartService'
-import favoriteService from '../favorite/favoriteService'
 
 const clearStorage = () => {
   localStorage.removeItem('token')

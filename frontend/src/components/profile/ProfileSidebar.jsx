@@ -3,6 +3,7 @@ import { X, LogOut, Award, Clock, ChevronDown, ChevronUp, Heart, MessageCircle }
 import { Link } from 'react-router-dom'
 import apiClient from '../../shared/services/apiClient'
 import ReviewForm from '../reviews/ReviewForm'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpen, user: userProp }) {
   const [activeTab, setActiveTab] = useState('account')
@@ -209,7 +210,24 @@ export default function ProfileSidebar({ isOpen, onClose, onLogout, onContactOpe
                           (order.items || order.orders_items || []).map((item) => (
                             <div key={item.order_item_id || item.product_id} className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
-                                <img src={item.image || item.products?.image || item.products?.product_variants?.[0]?.images?.[0] || 'https://via.placeholder.com/40'} alt={item.products?.name || item.name || 'Product'} className="w-10 h-10 rounded-sm object-cover bg-gray-100" />
+                                <img
+                                  src={
+                                    resolveImageUrl(
+                                      item.image ||
+                                        item.products?.image ||
+                                        item.products?.product_variants?.[0]?.images?.[0]
+                                    ) || ''
+                                  }
+                                  alt={item.products?.name || item.name || 'Product'}
+                                  className="w-10 h-10 rounded-sm object-cover bg-gray-100"
+                                  loading="lazy"
+                                  decoding="async"
+                                  onError={(e) => {
+                                    const img = e.currentTarget
+                                    img.onerror = null
+                                    img.src = ''
+                                  }}
+                                />
                                 <div>
                                   <p className="text-sm text-gray-900">{item.products?.name || item.name || 'Product'}</p>
                                   <p className="text-xs text-gray-500">Qty: {item.quantity || 1}</p>

@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { X, Minus, Plus, Trash2 } from 'lucide-react'
 import cartService from './cartService'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 const FREE_SHIPPING_THRESHOLD = 50
 
 function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
   const name = item.products?.name || item.product?.name || item.name || 'Product'
   const price = parseFloat(item.products?.price || item.product?.price || item.price || 0)
-  const image = item.products?.product_variants?.[0]?.images?.[0] || item.product?.image || item.image || 'https://via.placeholder.com/80'
+  const imageRaw = item.products?.product_variants?.[0]?.images?.[0] || item.product?.image || item.image || null
+  const image = resolveImageUrl(imageRaw) || null
   const itemId = item.cart_item_id
   const productId = item.product_id || item.productId
   const quantity = item.quantity || 0
@@ -19,7 +21,22 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
   return (
     <div className="flex gap-4 py-4 border-b border-gray-200">
       <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden">
-        <img src={image} alt={name} className="w-full h-full object-cover" />
+        {image ? (
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              const img = e.currentTarget
+              img.onerror = null
+              img.src = ''
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">No image</div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">

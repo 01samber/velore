@@ -19,7 +19,7 @@ export default function ForgotPassword() {
     try {
       await apiClient.post("/auth/forgot-password", { email });
       setSubmitted(true);
-    } catch (err) {
+    } catch {
       // If email was sent successfully but response parsing failed, still show success
       setSubmitted(true);
     } finally {

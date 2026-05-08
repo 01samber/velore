@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Star } from 'lucide-react'
 import apiClient from '../../shared/services/apiClient'
+import { resolveImageUrl } from '../../shared/utils/imageUrl'
 
 export default function ReviewForm({ isOpen, onClose, orderId, productId, productName, productImage, onSuccess }) {
   const [rating, setRating] = useState(0)
@@ -82,9 +83,16 @@ export default function ReviewForm({ isOpen, onClose, orderId, productId, produc
           {productName && (
             <div className="flex items-center gap-3 mb-5 p-3 border border-gray-200 rounded-sm">
               <img
-                src={productImage || 'https://via.placeholder.com/64'}
+                src={resolveImageUrl(productImage) || ''}
                 alt={productName}
                 className="w-14 h-14 object-cover rounded-sm bg-gray-100"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  const img = e.currentTarget
+                  img.onerror = null
+                  img.src = ''
+                }}
               />
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-400">Product</p>

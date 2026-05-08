@@ -162,11 +162,14 @@ export default function Checkout() {
     setCartTotal(total)
   }
 
-  const subtotal = cartTotal
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3
-  const total = subtotal + shipping - discountAmount
+  const cartIsEmpty = cartItems.length === 0
+  const subtotal = cartIsEmpty ? 0 : cartTotal
+  const shipping = cartIsEmpty ? 0 : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3
+  const discountSafe = cartIsEmpty ? 0 : discountAmount
+  const total = Math.max(0, subtotal + shipping - discountSafe)
 
   const applyDiscount = () => {
+    if (cartIsEmpty) return
     if (discountCode.toUpperCase() === 'WELCOME10' && !discountApplied) {
       setDiscountAmount(subtotal * 0.1); setDiscountApplied(true)
     } else if (discountCode.toUpperCase() === 'FREESHIP' && !discountApplied) {
@@ -235,8 +238,6 @@ const buildOrderPayload = () => {
   const handleCODCheckout = async () => {
     setLoading(true)
     try {
-      const payload = buildOrderPayload()
-    console.log('Sending payload:', JSON.stringify(payload, null, 2))
       const { response, orderNumber } = await createOrder()
       setConfirmedOrder({ orderNumber, orderId: response?.data?.order_id })
       setShowCODModal(true)
@@ -251,8 +252,6 @@ const buildOrderPayload = () => {
   const handleWhishCheckout = async () => {
     setLoading(true)
     try {
-      const payload = buildOrderPayload()
-    console.log('Sending payload:', JSON.stringify(payload, null, 2))
       const { orderNumber } = await createOrder()
       const returnUrl = `${window.location.origin}/payment-success`
       const appUrl = `whish://pay?amount=${total.toFixed(2)}&currency=USD&orderId=${orderNumber}&callback=${encodeURIComponent(returnUrl)}`
@@ -269,12 +268,7 @@ const buildOrderPayload = () => {
   const handleCardCheckout = async () => {
     setLoading(true)
     try {
-      const payload = buildOrderPayload()
-    console.log('Sending payload:', JSON.stringify(payload, null, 2))
       const { orderNumber } = await createOrder()
-      const returnUrl = encodeURIComponent(
-        `${window.location.origin}/payment-success?orderNumber=${orderNumber}&amount=${total.toFixed(2)}`
-      )
       // ⚠️ Replace YOUR_STRIPE_PAYMENT_LINK with your real Stripe Payment Link from dashboard.stripe.com
       const stripeUrl = `https://buy.stripe.com/YOUR_STRIPE_PAYMENT_LINK?prefilled_email=${encodeURIComponent(contactInfo.email)}&client_reference_id=${orderNumber}`
       window.location.href = stripeUrl
@@ -398,8 +392,25 @@ const buildOrderPayload = () => {
                 </h2>
                 <div className="space-y-3">
                   {PAYMENT_METHODS.map(method => (
-                    <label key={method.id} className={`flex items-center gap-4 p-4 border-2 rounded-sm cursor-pointer transition-all ${selectedPayment === method.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <input type="radio" name="payment" value={method.id} checked={selectedPayment === method.id} onChange={(e) => setSelectedPayment(e.target.value)} className="w-4 h-4" />
+                    <label
+                      key={method.id}
+                      className={`flex items-center gap-4 p-4 border-2 rounded-sm transition-all ${
+                        cartIsEmpty
+                          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                          : selectedPayment === method.id
+                            ? 'border-green-500 bg-green-50 cursor-pointer'
+                            : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.id}
+                        checked={selectedPayment === method.id}
+                        onChange={(e) => setSelectedPayment(e.target.value)}
+                        className="w-4 h-4"
+                        disabled={cartIsEmpty}
+                      />
                       <div className="flex-1">
                         <span className="font-medium text-gray-900 block">{method.name}</span>
                         <p className="text-xs text-gray-500 mt-0.5">{method.description}</p>
@@ -482,7 +493,7 @@ const buildOrderPayload = () => {
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                  {discountAmount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${discountAmount.toFixed(2)}</span></div>}
+                  {discountSafe > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${discountSafe.toFixed(2)}</span></div>}
                   <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className={shipping === 0 ? 'text-green-600' : ''}>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="flex justify-between font-semibold text-base"><span>Total</span><span>${total.toFixed(2)}</span></div>
