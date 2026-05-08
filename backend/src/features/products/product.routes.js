@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const productController = require("./product.controller");
+const { adminAuthMiddleware } = require("../../shared/middleware/middleware");
+const rbac = require("../rbac");
 const {
   validateId,
   validateCreateProduct,
@@ -21,8 +23,9 @@ router.get("/brand/:id", validateId, productController.getProductsByBrand);
 router.get("/:id", validateId, productController.getProductById);
 
 // Admin-only routes
-router.post("/", validateCreateProduct, productController.createProduct);
-router.put("/:id", validateUpdateProduct, productController.updateProduct);
-router.delete("/:id", validateId, productController.deleteProduct);
+router.post("/", adminAuthMiddleware, rbac.requirePermission("write:products"), validateCreateProduct, productController.createProduct);
+router.put("/:id", adminAuthMiddleware, rbac.requirePermission("write:products"), validateUpdateProduct, productController.updateProduct);
+router.patch("/:id", adminAuthMiddleware, rbac.requirePermission("write:products"), validateUpdateProduct, productController.updateProduct);
+router.delete("/:id", adminAuthMiddleware, rbac.requirePermission("delete:products"), validateId, productController.deleteProduct);
 
 module.exports = router;

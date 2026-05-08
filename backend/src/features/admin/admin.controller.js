@@ -38,7 +38,16 @@ const adminController = {
 
   async getDashboard(req, res) {
     try {
-      const data = await adminService.getDashboardStats()
+      const data = await adminService.getDashboardStats(req.admin?.role)
+      return jsonSuccess(res, data)
+    } catch (error) {
+      return jsonError(res, 500, error.message)
+    }
+  },
+
+  async getAnalytics(req, res) {
+    try {
+      const data = await adminService.getAnalytics()
       return jsonSuccess(res, data)
     } catch (error) {
       return jsonError(res, 500, error.message)

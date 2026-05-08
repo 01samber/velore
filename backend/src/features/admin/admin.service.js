@@ -74,25 +74,23 @@ const adminService = {
 
   // ─── Dashboard ─────────────────────────────────────────────
 
-  async getDashboardStats() {
+  async getDashboardStats(role) {
+    const isSuperAdmin = role === 'super_admin'
+
     const [
       totalUsers,
       activeUsers,
       totalOrders,
       pendingOrders,
       totalProducts,
-      totalRevenue,
-      recentOrders
+      recentOrders,
+      totalRevenue
     ] = await Promise.all([
       prisma.users.count(),
       prisma.users.count({ where: { is_active: true } }),
       prisma.orders.count(),
       prisma.orders.count({ where: { status: 'pending' } }),
       prisma.products.count({ where: { is_active: true } }),
-      prisma.payments.aggregate({
-        _sum: { amount: true },
-        where: { status: 'completed' }
-      }),
       prisma.orders.findMany({
         take: 5,
         orderBy: { order_date: 'desc' },
@@ -100,14 +98,19 @@ const adminService = {
           users: { select: { name: true, email: true } },
           payments: { select: { amount: true, status: true } }
         }
-      })
+      }),
+      isSuperAdmin
+        ? prisma.payments.aggregate({
+            _sum: { amount: true },
+            where: { status: 'completed' }
+          })
+        : Promise.resolve(null)
     ])
 
-    return {
+    const data = {
       users: { total: totalUsers, active: activeUsers },
       orders: { total: totalOrders, pending: pendingOrders },
       products: { total: totalProducts },
-      revenue: { total: Number(totalRevenue._sum.amount || 0) },
       recent_orders: recentOrders.map(o => ({
         order_id: o.order_id.toString(),
         user: o.users?.name || o.users?.email,
@@ -115,6 +118,41 @@ const adminService = {
         amount: o.payments?.amount || 0,
         date: o.order_date
       }))
+    }
+
+    if (isSuperAdmin) {
+      data.revenue = { total: Number(totalRevenue?._sum?.amount || 0) }
+    }
+
+    return data
+  },
+
+  async getAnalytics() {
+    // Minimal, real-data analytics for Super Admin only.
+    const [totalRevenue, completedPaymentsCount, ordersTotal, ordersByStatus, productsActive, usersTotal] =
+      await Promise.all([
+        prisma.payments.aggregate({
+          _sum: { amount: true },
+          where: { status: 'completed' }
+        }),
+        prisma.payments.count({ where: { status: 'completed' } }),
+        prisma.orders.count(),
+        prisma.orders.groupBy({
+          by: ['status'],
+          _count: { _all: true }
+        }),
+        prisma.products.count({ where: { is_active: true } }),
+        prisma.users.count()
+      ])
+
+    return {
+      revenue: { total: Number(totalRevenue._sum.amount || 0), completed_payments: completedPaymentsCount },
+      orders: {
+        total: ordersTotal,
+        by_status: ordersByStatus.map(r => ({ status: r.status, count: r._count._all }))
+      },
+      products: { active: productsActive },
+      customers: { total: usersTotal }
     }
   },
 

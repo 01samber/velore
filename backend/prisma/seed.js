@@ -68,6 +68,7 @@ async function ensureAddress(userId, payload) {
 async function main() {
   // ── Roles ─────────────────────────────────────────────────────────────
   const superAdminRole = await ensureRole('super_admin', 'Full access')
+  const staffAdminRole = await ensureRole('staff_admin', 'Operational staff access')
   const adminRole = await ensureRole('admin', 'Admin access')
   const customerRole = await ensureRole('customer', 'Customer role')
 
@@ -75,6 +76,8 @@ async function main() {
   const adminHash = await bcrypt.hash(DEMO.adminPassword, 10)
   const admin = await prisma.admin.upsert({
     where: { email: DEMO.adminEmail },
+    // Keep legacy demo admin as "admin" role for backward compatibility.
+    // CRM should prefer creating staff accounts with role "staff_admin".
     update: { password_hash: adminHash, role_id: adminRole.role_id },
     create: {
       email: DEMO.adminEmail,

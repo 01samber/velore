@@ -65,22 +65,23 @@ const getReviewById = async (req, res) => {
 // ─── CREATE REVIEW ────────────────────────────────────────────────────────────
 const createReview = async (req, res) => {
   try {
-    const { user_id, product_id, order_id, rating, comment } = req.body;
+    const { product_id, order_id, rating, comment } = req.body;
+    const tokenUserId = req.user?.userId;
 
-    if (!user_id || !product_id || !order_id) {
-      return res.status(400).json({ success: false, message: "user_id, product_id, and order_id are required" });
+    if (!tokenUserId || !product_id || !order_id) {
+      return res.status(400).json({ success: false, message: "product_id and order_id are required", errors: [] });
     }
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5", errors: [] });
     }
 
     if (!comment || !comment.trim()) {
-      return res.status(400).json({ success: false, message: "Comment is required" });
+      return res.status(400).json({ success: false, message: "Comment is required", errors: [] });
     }
 
     const review = await reviewService.createReview({
-      user_id,
+      user_id: tokenUserId,
       product_id,
       order_id,
       rating: Number(rating),
@@ -88,22 +89,23 @@ const createReview = async (req, res) => {
     });
 
     res.status(201).json({
-  success: true,
-  message: "Review submitted successfully",
-  data: {
-    review_id: review.review_id.toString(),
-    user_id: review.user_id.toString(),
-    product_id: review.product_id.toString(),
-    order_id: review.order_id.toString(),
-    rating: review.rating,
-    comment: review.comment,
-    status: review.status,
-    created_at: review.created_at
-  },
-});
+      success: true,
+      message: "Review submitted successfully",
+      data: {
+        review_id: review.review_id.toString(),
+        user_id: review.user_id.toString(),
+        product_id: review.product_id.toString(),
+        order_id: review.order_id.toString(),
+        rating: review.rating,
+        comment: review.comment,
+        status: review.status,
+        created_at: review.created_at
+      },
+      errors: []
+    });
   } catch (error) {
     console.error("createReview error:", error);
-    res.status(500).json({ success: false, message: error.message || "Failed to submit review" });
+    res.status(500).json({ success: false, message: error.message || "Failed to submit review", errors: [] });
   }
 };
 
