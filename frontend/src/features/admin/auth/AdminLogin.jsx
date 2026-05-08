@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAdminAuth } from './AdminAuthContext'
 
 export default function AdminLogin() {
-  const { login, error: authError } = useAdminAuth()
+  const { login, error: authError, isAuthenticated } = useAdminAuth()
+  const location = useLocation()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
@@ -16,6 +18,11 @@ export default function AdminLogin() {
     setLoading(false)
     // if login succeeded, AdminAuthContext updates isAuthenticated
     // and VeloreAdmin will render the dashboard instead of this page
+  }
+
+  if (isAuthenticated) {
+    const from = location.state?.from
+    return <Navigate to={typeof from === 'string' ? from : '/admin/dashboard'} replace />
   }
 
   return (

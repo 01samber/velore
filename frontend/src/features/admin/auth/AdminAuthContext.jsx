@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import adminService from '../adminService'
+import { adminAuthService } from '../services/adminAuthService'
 
 const AdminAuthContext = createContext(null)
+
+const ADMIN_TOKEN_KEY = 'admin_token'
+const ADMIN_USER_KEY = 'velore_admin_user'
 
 export function AdminAuthProvider({ children }) {
   const [admin, setAdmin]       = useState(null)   // { id, name, email, role }
@@ -11,14 +14,14 @@ export function AdminAuthProvider({ children }) {
 
   // ─── Rehydrate from localStorage on mount ──────────────────────────────────
   useEffect(() => {
-    const storedToken = localStorage.getItem('token')
-    const storedAdmin = localStorage.getItem('velore_admin_user')
+    const storedToken = localStorage.getItem(ADMIN_TOKEN_KEY)
+    const storedAdmin = localStorage.getItem(ADMIN_USER_KEY)
     if (storedToken && storedAdmin) {
       try {
         setToken(storedToken)
         setAdmin(JSON.parse(storedAdmin))
       } catch {
-        localStorage.removeItem('velore_admin_user')
+        localStorage.removeItem(ADMIN_USER_KEY)
       }
     }
     setLoading(false)
@@ -28,26 +31,24 @@ export function AdminAuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     setError(null)
     try {
-      const res = await adminService.login(email, password)
-      // res is already unwrapped by apiClient interceptor → res.data
-      const { token: newToken, admin: adminData } = res.data
+      const { token: newToken, admin: adminData } = await adminAuthService.login({ email, password })
 
-      localStorage.setItem('token', newToken)
-      localStorage.setItem('velore_admin_user', JSON.stringify(adminData))
+      localStorage.setItem(ADMIN_TOKEN_KEY, newToken)
+      localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(adminData))
 
       setToken(newToken)
       setAdmin(adminData)
       return true
     } catch (err) {
-      setError(err.error || err.message || 'Login failed')
+      setError(err?.message || err?.error || 'Login failed')
       return false
     }
   }, [])
 
   // ─── Logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(() => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('velore_admin_user')
+    localStorage.removeItem(ADMIN_TOKEN_KEY)
+    localStorage.removeItem(ADMIN_USER_KEY)
     setToken(null)
     setAdmin(null)
   }, [])

@@ -23,10 +23,8 @@ const PolicyPlaceholder = lazy(() => import('./pages/PolicyPlaceholder'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Profile = lazy(() => import('./pages/Profile'))
 
-// Admin (no store shell)
-const Admin = lazy(() => import('./pages/Admin'))
-const AdminLogin = lazy(() => import('./pages/AdminLogin'))
-const AdminApp = lazy(() => import('./features/admin/VeloreAdminUI'))
+// CRM Admin (isolated from storefront shell)
+const AdminApp = lazy(() => import('./features/admin/AdminApp'))
 
 // Lazy-loaded modals
 const CartSidebar = lazy(() => import('./features/cart/CartSidebar'))
@@ -99,22 +97,6 @@ export default function App() {
       <FavoritesProvider>
         <ScrollToTop />
         <Routes>
-          <Route
-            path="/admin/login"
-            element={
-              <Suspense fallback={<PageLoader label="Loading admin…" />}>
-                <AdminLogin />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <Suspense fallback={<PageLoader label="Loading admin…" />}>
-                <Admin />
-              </Suspense>
-            }
-          />
           <Route
             path="/admin/*"
             element={
