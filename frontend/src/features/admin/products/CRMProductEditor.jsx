@@ -470,15 +470,21 @@ export default function CRMProductEditor({ mode }) {
                               e.target.value = ''
                             }
                           }}
-                          className="block text-sm"
+                          className="crm-file-trigger block w-full sm:w-auto min-w-0"
                         />
-                        <span className="text-xs text-slate-500">Uploads return /uploads/... paths</span>
+                        <span className="text-xs text-[rgba(var(--velore-fg),0.52)]">Uploads return /uploads/... paths</span>
                       </div>
 
                       {images.length ? (
                         <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
                           {images.slice(0, 6).map((p) => (
-                            <img key={p} src={resolveImageUrl(p) || ''} alt="" className="w-full aspect-square rounded-xl border border-slate-200 object-cover bg-slate-50" />
+                            <img
+                              key={p}
+                              src={resolveImageUrl(p) || ''}
+                              alt=""
+                              className="w-full aspect-square rounded-xl border border-[rgba(var(--velore-border-soft),0.95)] object-cover bg-[rgba(var(--velore-accent),0.05)] ring-1 ring-[rgba(var(--velore-border-soft),0.45)]"
+                              loading="lazy"
+                            />
                           ))}
                         </div>
                       ) : null}
@@ -489,11 +495,13 @@ export default function CRMProductEditor({ mode }) {
             </div>
           ) : null}
 
-          <div className="mt-6 border-t border-slate-200 pt-6">
-            <div className="text-sm font-semibold">Create new variant</div>
-            <div className="mt-1 text-sm text-slate-600">Staff can create/update. Only Super Admin can delete.</div>
+          <div className="mt-6 border-t border-[rgba(var(--velore-border-soft),0.9)] pt-6">
+            <div className="text-sm font-semibold tracking-tight text-[rgb(var(--velore-fg))]">Create new variant</div>
+            <div className="mt-1 text-sm text-[rgba(var(--velore-fg),0.62)]">
+              Staff can create/update. Only Super Admin can delete.
+            </div>
             {variantNewError ? (
-              <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <div className="mt-3 rounded-[1.05rem] border border-rose-200/90 bg-rose-50/95 px-4 py-3 text-sm text-rose-900 shadow-sm">
                 {variantNewError}
               </div>
             ) : null}
@@ -501,21 +509,21 @@ export default function CRMProductEditor({ mode }) {
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {['sku', 'color_name', 'color_hex', 'size'].map((k) => (
                 <div key={k}>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">{k}</label>
+                  <label className="crm-field-label">{k}</label>
                   <input
                     value={variantNew[k] ?? ''}
                     onChange={(e) => setVariantNew((v) => ({ ...v, [k]: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+                    className="crm-input"
                   />
                 </div>
               ))}
               {['stock_quantity', 'low_stock_alert', 'price_adjustment'].map((k) => (
                 <div key={k}>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">{k}</label>
+                  <label className="crm-field-label">{k}</label>
                   <input
                     value={variantNew[k] ?? ''}
                     onChange={(e) => setVariantNew((v) => ({ ...v, [k]: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+                    className="crm-input"
                     inputMode={k === 'price_adjustment' ? 'decimal' : 'numeric'}
                   />
                 </div>
@@ -523,20 +531,24 @@ export default function CRMProductEditor({ mode }) {
             </div>
 
             <div className="mt-4">
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Images</label>
+              <label className="crm-field-label">Images</label>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/svg+xml"
                 multiple
                 onChange={(e) => setVariantNewImages(Array.from(e.target.files || []))}
-                className="block text-sm"
+                className="crm-file-trigger block w-full max-w-full"
               />
               {variantNewUploadedPaths.length ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {variantNewUploadedPaths.map((p) => (
-                    <span key={p} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] text-slate-700">
+                    <span key={p} className="crm-pill-muted max-w-full">
                       <span className="truncate max-w-[240px]">{p}</span>
-                      <button type="button" className="text-rose-700 hover:underline" onClick={() => setVariantNewUploadedPaths((arr) => arr.filter((x) => x !== p))}>
+                      <button
+                        type="button"
+                        className="text-rose-700 hover:underline shrink-0 font-medium"
+                        onClick={() => setVariantNewUploadedPaths((arr) => arr.filter((x) => x !== p))}
+                      >
                         Remove
                       </button>
                     </span>
