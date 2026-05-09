@@ -342,11 +342,15 @@ export default function CRMProductEditor({ mode }) {
                 const images = Array.isArray(current.images) ? current.images : []
 
                 return (
-                  <div key={v.variant_id} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                  <div key={v.variant_id} className="crm-panel-solid crm-hover-lift p-4 sm:p-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold">Variant #{v.variant_id}</div>
-                        <div className="text-xs text-slate-500">SKU required · Images stored as /uploads/products/…</div>
+                        <div className="text-sm font-semibold tracking-tight text-[rgb(var(--velore-fg))]">
+                          Variant #{v.variant_id}
+                        </div>
+                        <div className="text-xs text-[rgba(var(--velore-fg),0.52)] mt-0.5">
+                          SKU required · Images stored as /uploads/products/…
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <CRMActionButton
@@ -404,21 +408,21 @@ export default function CRMProductEditor({ mode }) {
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       {['sku', 'color_name', 'color_hex', 'size'].map((k) => (
                         <div key={k}>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1.5">{k}</label>
+                          <label className="crm-field-label">{k}</label>
                           <input
                             value={current[k] ?? ''}
                             onChange={(e) => setVariantDrafts((m) => ({ ...m, [v.variant_id]: { ...(m[v.variant_id] || {}), [k]: e.target.value } }))}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+                            className="crm-input"
                           />
                         </div>
                       ))}
                       {['stock_quantity', 'low_stock_alert', 'price_adjustment'].map((k) => (
                         <div key={k}>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1.5">{k}</label>
+                          <label className="crm-field-label">{k}</label>
                           <input
                             value={current[k] ?? ''}
                             onChange={(e) => setVariantDrafts((m) => ({ ...m, [v.variant_id]: { ...(m[v.variant_id] || {}), [k]: e.target.value } }))}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+                            className="crm-input"
                             inputMode={k === 'price_adjustment' ? 'decimal' : 'numeric'}
                           />
                         </div>
@@ -426,14 +430,14 @@ export default function CRMProductEditor({ mode }) {
                     </div>
 
                     <div className="mt-5">
-                      <div className="text-sm font-semibold">Images</div>
+                      <div className="text-sm font-semibold tracking-tight text-[rgb(var(--velore-fg))]">Images</div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {images.length ? images.map((p) => (
-                          <span key={p} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] text-slate-700">
+                          <span key={p} className="crm-pill-muted max-w-full">
                             <span className="truncate max-w-[240px]">{p}</span>
                             <button
                               type="button"
-                              className="text-rose-700 hover:underline"
+                              className="text-rose-700 hover:underline shrink-0 font-medium"
                               onClick={() => {
                                 const next = images.filter((x) => x !== p)
                                 setVariantDrafts((m) => ({ ...m, [v.variant_id]: { ...(m[v.variant_id] || {}), images: next } }))
@@ -442,10 +446,10 @@ export default function CRMProductEditor({ mode }) {
                               Remove
                             </button>
                           </span>
-                        )) : <span className="text-sm text-slate-500">No images</span>}
+                        )) : <span className="text-sm text-[rgba(var(--velore-fg),0.52)]">No images</span>}
                       </div>
 
-                      <div className="mt-4 flex items-center gap-3">
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp,image/svg+xml"

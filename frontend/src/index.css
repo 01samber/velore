@@ -423,6 +423,62 @@
     background: rgba(var(--velore-pearl), 0.72);
   }
 
+  .crm-field-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(var(--velore-fg), 0.52);
+    margin-bottom: 0.375rem;
+  }
+
+  .crm-pill-muted {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--velore-border-soft), 0.92);
+    background: rgba(var(--velore-accent), 0.055);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.6875rem;
+    color: rgba(var(--velore-fg), 0.78);
+  }
+
+  .crm-file-trigger {
+    font-size: 0.8125rem;
+    color: rgba(var(--velore-fg), 0.72);
+    max-width: 100%;
+  }
+
+  .crm-file-trigger::file-selector-button {
+    margin-right: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(var(--velore-border-soft), 0.95);
+    background: rgba(var(--velore-pearl), 0.95);
+    padding: 0.45rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgb(var(--velore-fg));
+    cursor: pointer;
+    transition: background-color 160ms ease-out, border-color 160ms ease-out;
+  }
+
+  .crm-file-trigger:hover::file-selector-button {
+    background: rgba(var(--velore-accent), 0.07);
+    border-color: rgba(var(--velore-ring), 0.22);
+  }
+
+  .crm-file-trigger:focus-visible::file-selector-button {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--velore-ring), 0.14);
+  }
+
+  .crm-file-trigger:disabled::file-selector-button {
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+
   .crm-hover-lift {
     transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
