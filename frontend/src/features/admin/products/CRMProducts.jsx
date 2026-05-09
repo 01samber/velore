@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Package } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { adminProductService } from '../services/adminProductService'
+import { useAdminAuth } from '../auth/AdminAuthContext'
+import { resolveImageUrl } from '../../../shared/utils/imageUrl'
 import CRMPageHeader from '../shared/CRMPageHeader'
 import CRMSectionCard from '../shared/CRMSectionCard'
 import CRMSearchInput from '../shared/CRMSearchInput'
@@ -12,10 +15,24 @@ import CRMDataTable from '../shared/CRMDataTable'
 import CRMStatusBadge from '../shared/CRMStatusBadge'
 import CRMActionButton from '../shared/CRMActionButton'
 
+function normalizeRole(role) {
+  if (!role) return null
+  if (role === 'admin') return 'staff_admin'
+  return role
+}
+
 export default function CRMProducts() {
+  const navigate = useNavigate()
+  const { admin } = useAdminAuth()
+  const role = normalizeRole(admin?.role)
+  const isSuper = role === 'super_admin'
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [state, setState] = useState({ loading: true, error: null, rows: [], pagination: null })
+  const [busyId, setBusyId] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [banner, setBanner] = useState(null) // { tone: 'success'|'error', text }
 
   const load = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }))
@@ -38,9 +55,20 @@ export default function CRMProducts() {
         header: 'Product',
         cell: (p) => (
           <div className="flex items-center gap-3 min-w-[240px]">
-            <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center">
-              <Package className="w-4 h-4" />
-            </div>
+            {p.thumbnail ? (
+              <img
+                src={resolveImageUrl(p.thumbnail) || ''}
+                alt=""
+                className="w-9 h-9 rounded-xl border border-[rgba(var(--velore-border-soft),0.95)] object-cover bg-[rgba(var(--velore-accent),0.05)] ring-1 ring-[rgba(var(--velore-border-soft),0.5)]"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-[rgb(var(--velore-fg))] text-white flex items-center justify-center ring-1 ring-[rgba(var(--velore-border-soft),0.35)]">
+                <Package className="w-4 h-4" />
+              </div>
+            )}
             <div className="min-w-0">
               <div className="font-semibold truncate">{p.name}</div>
               <div className="text-xs text-slate-500 truncate">#{p.id}</div>
@@ -61,6 +89,20 @@ export default function CRMProducts() {
         cell: (p) => <span className="text-slate-700 tabular-nums">{p.variants_count ?? '—'}</span>,
       },
       {
+        key: 'total_stock',
+        header: 'Stock',
+        cell: (p) => {
+          const stock = Number(p.total_stock ?? 0)
+          const low = stock > 0 && stock <= 5
+          return (
+            <div className="flex items-center gap-2">
+              <span className="text-slate-800 tabular-nums font-semibold">{stock}</span>
+              {low ? <CRMStatusBadge tone="warning">Low</CRMStatusBadge> : null}
+            </div>
+          )
+        },
+      },
+      {
         key: 'is_active',
         header: 'Status',
         cell: (p) =>
@@ -70,8 +112,52 @@ export default function CRMProducts() {
             <CRMStatusBadge tone="danger">Inactive</CRMStatusBadge>
           ),
       },
+      {
+        key: 'actions',
+        header: 'Actions',
+        cell: (p) => (
+          <div className="flex items-center gap-2">
+            <CRMActionButton
+              tone="secondary"
+              onClick={() => navigate(`/admin/products/${p.id}/edit`)}
+            >
+              Edit
+            </CRMActionButton>
+
+            <CRMActionButton
+              tone="danger"
+              disabled={!isSuper || busyId === p.id}
+              title={!isSuper ? 'Super Admin only' : confirmDeleteId === p.id ? 'Click again to confirm' : 'Delete product'}
+              onClick={async () => {
+                if (!isSuper) return
+                setBanner(null)
+
+                if (confirmDeleteId !== p.id) {
+                  setConfirmDeleteId(p.id)
+                  window.setTimeout(() => setConfirmDeleteId(null), 4000)
+                  return
+                }
+
+                setBusyId(p.id)
+                try {
+                  await adminProductService.delete(p.id)
+                  setBanner({ tone: 'success', text: 'Product deleted.' })
+                  setConfirmDeleteId(null)
+                  await load()
+                } catch (e) {
+                  setBanner({ tone: 'error', text: e?.message || e?.error || 'Delete failed' })
+                } finally {
+                  setBusyId(null)
+                }
+              }}
+            >
+              {confirmDeleteId === p.id ? 'Confirm' : 'Delete'}
+            </CRMActionButton>
+          </div>
+        ),
+      },
     ],
-    []
+    [busyId, confirmDeleteId, isSuper, load, navigate]
   )
 
   const paginationUi = state.pagination ? (
@@ -84,7 +170,7 @@ export default function CRMProducts() {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          className="crm-btn-secondary px-3 py-2 disabled:opacity-45"
           disabled={state.pagination.page <= 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
         >
@@ -92,7 +178,7 @@ export default function CRMProducts() {
         </button>
         <button
           type="button"
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          className="crm-btn-secondary px-3 py-2 disabled:opacity-45"
           disabled={state.pagination.page >= state.pagination.pages}
           onClick={() => setPage((p) => p + 1)}
         >
@@ -108,8 +194,8 @@ export default function CRMProducts() {
         title="Products"
         subtitle="Real product data from the backend admin endpoint."
         right={
-          <CRMActionButton tone="secondary" disabled>
-            Add product (coming soon)
+          <CRMActionButton tone="primary" onClick={() => navigate('/admin/products/new')}>
+            Add product
           </CRMActionButton>
         }
       />
@@ -119,6 +205,18 @@ export default function CRMProducts() {
         subtitle="Search by product name"
         right={<div className="w-72 max-w-full"><CRMSearchInput value={search} onChange={(v) => { setPage(1); setSearch(v) }} placeholder="Search products…" /></div>}
       >
+        {banner ? (
+          <div
+            className={[
+              'mb-4 rounded-[1.1rem] border px-4 py-3.5 text-sm leading-relaxed shadow-sm',
+              banner.tone === 'success'
+                ? 'bg-emerald-50/95 border-emerald-200/90 text-emerald-900'
+                : 'bg-rose-50/95 border-rose-200/90 text-rose-900',
+            ].join(' ')}
+          >
+            {banner.text}
+          </div>
+        ) : null}
         {state.loading ? <CRMLoadingState label="Loading products…" /> : null}
         {!state.loading && state.error ? <CRMErrorState message={state.error} onRetry={load} /> : null}
         {!state.loading && !state.error && state.rows.length === 0 ? (

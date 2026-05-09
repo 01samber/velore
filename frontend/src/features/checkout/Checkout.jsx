@@ -153,7 +153,9 @@ export default function Checkout() {
     const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
     setCartItems(guestCart.map(item => ({
       product_id: item.productId,
+      variant_id: item.variantId || null,
       quantity: item.quantity,
+      available_stock: item.availableStock ?? null,
       products: { name: item.name, price: item.price, image: item.image },
       product_variants: null,
       prescriptionData: item.prescriptionData || null
@@ -196,6 +198,17 @@ export default function Checkout() {
   const generateOrderNumber = () =>
     `VEL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
 
+  const stockIssues = cartItems
+    .map((item) => {
+      const available =
+        item.available_stock ??
+        item.product_variants?.stock_quantity ??
+        null
+      const qty = Number(item.quantity || 0)
+      return typeof available === 'number' && qty > available
+    })
+    .some(Boolean)
+
   // ✅ Builds the payload — includes guestItems so backend can process guest cart
 const buildOrderPayload = () => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
@@ -217,8 +230,8 @@ const buildOrderPayload = () => {
   if (!token) {
     payload.guestItems = cartItems.map(item => ({
       product_id: Number(item.product_id || item.productId),
+      variant_id: item.variant_id ? Number(item.variant_id) : (item.variantId ? Number(item.variantId) : null),
       quantity: item.quantity || 1,
-      price: parseFloat(item.products?.price || item.price || 0)
     }))
   }
 
@@ -242,7 +255,8 @@ const buildOrderPayload = () => {
       setConfirmedOrder({ orderNumber, orderId: response?.data?.order_id })
       setShowCODModal(true)
     } catch (err) {
-      setError(err?.message || 'Checkout failed. Please try again.')
+      const msg = err?.response?.data?.message || err?.message || 'Checkout failed. Please try again.'
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -259,7 +273,8 @@ const buildOrderPayload = () => {
       window.location.href = appUrl
       setTimeout(() => { window.location.href = webUrl }, 1500)
     } catch (err) {
-      setError(err?.message || 'Checkout failed. Please try again.')
+      const msg = err?.response?.data?.message || err?.message || 'Checkout failed. Please try again.'
+      setError(msg)
       setLoading(false)
     }
   }
@@ -273,7 +288,8 @@ const buildOrderPayload = () => {
       const stripeUrl = `https://buy.stripe.com/YOUR_STRIPE_PAYMENT_LINK?prefilled_email=${encodeURIComponent(contactInfo.email)}&client_reference_id=${orderNumber}`
       window.location.href = stripeUrl
     } catch (err) {
-      setError(err?.message || 'Checkout failed. Please try again.')
+      const msg = err?.response?.data?.message || err?.message || 'Checkout failed. Please try again.'
+      setError(msg)
       setLoading(false)
     }
   }
@@ -281,6 +297,10 @@ const buildOrderPayload = () => {
   const handleCheckout = () => {
     setError('')
     if (!validateForm()) return
+    if (stockIssues) {
+      setError('Some items exceed available stock. Please adjust quantities in your cart before checkout.')
+      return
+    }
     if (selectedPayment === 'cod') handleCODCheckout()
     else if (selectedPayment === 'whish') handleWhishCheckout()
     else if (selectedPayment === 'mastercard') handleCardCheckout()
@@ -319,6 +339,11 @@ const buildOrderPayload = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
               {error}
+            </div>
+          )}
+          {stockIssues && !error && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded">
+              Some items exceed available stock. Please update quantities before confirming your order.
             </div>
           )}
 
@@ -508,7 +533,7 @@ const buildOrderPayload = () => {
 
                 <button
                   onClick={handleCheckout}
-                  disabled={cartItems.length === 0 || loading}
+                  disabled={cartItems.length === 0 || loading || stockIssues}
                   className="w-full py-3.5 text-sm font-medium rounded-sm transition-all bg-gray-900 text-white hover:bg-gray-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
                   {ctaLabel()}

@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AdminAuthProvider } from './auth/AdminAuthContext'
@@ -6,16 +7,17 @@ import AdminProtectedRoute from './auth/AdminProtectedRoute'
 import AdminRoleGuard from './auth/AdminRoleGuard'
 import CRMLayout from './layout/CRMLayout'
 
-import CRMDashboard from './dashboard/CRMDashboard'
-import CRMProducts from './products/CRMProducts'
-import CRMInventory from './inventory/CRMInventory'
-import CRMOrders from './orders/CRMOrders'
-import CRMCustomers from './customers/CRMCustomers'
-import CRMReviews from './reviews/CRMReviews'
-import CRMBlogs from './blogs/CRMBlogs'
-import CRMAnalytics from './analytics/CRMAnalytics'
-import CRMStaff from './staff/CRMStaff'
-import CRMSettings from './settings/CRMSettings'
+const CRMDashboard = lazy(() => import('./dashboard/CRMDashboard'))
+const CRMProducts = lazy(() => import('./products/CRMProducts'))
+const CRMProductEditor = lazy(() => import('./products/CRMProductEditor'))
+const CRMInventory = lazy(() => import('./inventory/CRMInventory'))
+const CRMOrders = lazy(() => import('./orders/CRMOrders'))
+const CRMCustomers = lazy(() => import('./customers/CRMCustomers'))
+const CRMReviews = lazy(() => import('./reviews/CRMReviews'))
+const CRMBlogs = lazy(() => import('./blogs/CRMBlogs'))
+const CRMAnalytics = lazy(() => import('./analytics/CRMAnalytics'))
+const CRMStaff = lazy(() => import('./staff/CRMStaff'))
+const CRMSettings = lazy(() => import('./settings/CRMSettings'))
 
 export default function AdminApp() {
   return (
@@ -28,6 +30,8 @@ export default function AdminApp() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<CRMDashboard />} />
             <Route path="products" element={<CRMProducts />} />
+            <Route path="products/new" element={<CRMProductEditor mode="create" />} />
+            <Route path="products/:id/edit" element={<CRMProductEditor mode="edit" />} />
             <Route path="inventory" element={<CRMInventory />} />
             <Route path="orders" element={<CRMOrders />} />
             <Route path="customers" element={<CRMCustomers />} />

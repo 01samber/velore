@@ -27,6 +27,14 @@ export default function EyewearCard({
     product_variants?.[0]?.images ||
     productVariants?.[0]?.images ||
     null
+  const firstVariantId =
+    product_variants?.[0]?.variant_id ||
+    productVariants?.[0]?.variant_id ||
+    null
+  const firstVariantStock =
+    product_variants?.[0]?.stock_quantity ??
+    productVariants?.[0]?.stock_quantity ??
+    null
   const imageRaw = image || variantImages?.[0] || null
   const imageUrl = resolveImageUrl(imageRaw) || ''
 
@@ -39,17 +47,21 @@ export default function EyewearCard({
     // Guest mode: localStorage only
     if (!token) {
       const localCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
-      const existing = localCart.find((item) => item.productId === productIdFinal)
+      const existing = localCart.find((item) => item.productId === productIdFinal && (item.variantId || null) === (firstVariantId || null))
     
       if (existing) {
-        existing.quantity += 1
+        const maxQty = typeof firstVariantStock === 'number' ? firstVariantStock : null
+        const nextQty = existing.quantity + 1
+        existing.quantity = maxQty !== null ? Math.min(nextQty, maxQty) : nextQty
       } else {
         localCart.push({
           productId: productIdFinal,
+          variantId: firstVariantId,
           name,
           price: parseFloat(price),
           image: image || '',
           quantity: 1,
+          availableStock: typeof firstVariantStock === 'number' ? firstVariantStock : null,
         })
       }
     
@@ -65,6 +77,7 @@ export default function EyewearCard({
     try {
       await cartService.addItem({
         productId: Number(productIdFinal),
+        variantId: firstVariantId ? Number(firstVariantId) : undefined,
         quantity: 1,
       })
       setJustAdded(true)

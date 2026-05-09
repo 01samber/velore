@@ -13,10 +13,19 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
   const image = resolveImageUrl(imageRaw) || null
   const itemId = item.cart_item_id
   const productId = item.product_id || item.productId
+  const variantId = item.variant_id || item.variantId || null
   const quantity = item.quantity || 0
+  const availableStock =
+    item.available_stock ??
+    item.product_variants?.stock_quantity ??
+    item.availableStock ??
+    null
 
   const prescription = item.prescription_data || item.prescriptionData || null
   const hasPrescription = prescription && (prescription.sph_r || prescription.sph_l || prescription.cyl_r || prescription.cyl_l || prescription.axis || prescription.pd)
+
+  const stockIssue = typeof availableStock === 'number' && quantity > availableStock
+  const disablePlus = typeof availableStock === 'number' && quantity >= availableStock
 
   return (
     <div className="flex gap-4 py-4 border-b border-gray-200">
@@ -43,7 +52,7 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
         <div className="flex justify-between">
           <h4 className="text-sm font-medium text-gray-900 truncate pr-2">{name}</h4>
           <button
-            onClick={() => onRemove(isGuest ? productId : itemId)}
+            onClick={() => onRemove(isGuest ? { productId, variantId } : itemId)}
             className="text-gray-400 hover:text-red-500 flex-shrink-0"
           >
             <Trash2 size={16} />
@@ -66,10 +75,27 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
           </div>
         )}
 
+        {typeof availableStock === 'number' ? (
+          <div className="mt-2">
+            {availableStock === 0 ? (
+              <p className="text-xs text-red-600">Out of stock</p>
+            ) : availableStock <= 5 ? (
+              <p className="text-xs text-orange-600">Only {availableStock} left</p>
+            ) : (
+              <p className="text-xs text-gray-500">In stock</p>
+            )}
+            {stockIssue ? (
+              <p className="text-xs text-red-600 mt-1">
+                Your cart has {quantity}. Only {availableStock} available — please reduce quantity.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center border border-gray-300 rounded-sm">
             <button
-              onClick={() => onQuantityChange(isGuest ? productId : itemId, quantity - 1, isGuest)}
+              onClick={() => onQuantityChange(isGuest ? { productId, variantId } : itemId, quantity - 1, isGuest)}
               className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-100"
               disabled={quantity <= 1}
             >
@@ -77,8 +103,9 @@ function CartItem({ item, onRemove, onQuantityChange, isGuest }) {
             </button>
             <span className="w-8 text-center text-sm">{quantity}</span>
             <button
-              onClick={() => onQuantityChange(isGuest ? productId : itemId, quantity + 1, isGuest)}
+              onClick={() => onQuantityChange(isGuest ? { productId, variantId } : itemId, quantity + 1, isGuest)}
               className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-100"
+              disabled={disablePlus}
             >
               <Plus size={14} />
             </button>
@@ -95,6 +122,7 @@ export default function CartSidebar({ isOpen, onClose }) {
   const [isGuest, setIsGuest] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
+  const [cartMessage, setCartMessage] = useState('')
 
   useEffect(() => {
     if (isOpen) {
@@ -137,6 +165,7 @@ export default function CartSidebar({ isOpen, onClose }) {
 
   const handleClearAll = async () => {
     setIsClearing(true)
+    setCartMessage('')
     try {
       if (isGuest) {
         localStorage.setItem('guestCart', '[]')
@@ -154,12 +183,23 @@ export default function CartSidebar({ isOpen, onClose }) {
 
   const handleQuantityChange = async (id, newQuantity, isGuestItem) => {
     if (newQuantity < 1) return
+    setCartMessage('')
 
     if (isGuestItem) {
       const localCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
-      const updated = localCart.map(item =>
-        item.productId === id ? { ...item, quantity: newQuantity } : item
-      )
+      const keyProductId = typeof id === 'object' ? id.productId : id
+      const keyVariantId = typeof id === 'object' ? id.variantId : null
+
+      const updated = localCart.map(item => {
+        const match = item.productId === keyProductId && (item.variantId || null) === (keyVariantId || null)
+        if (!match) return item
+        const maxQty = typeof item.availableStock === 'number' ? item.availableStock : null
+        if (maxQty !== null && newQuantity > maxQty) {
+          setCartMessage(`Only ${maxQty} units available for ${item.name || 'this product'}.`)
+          return { ...item, quantity: maxQty }
+        }
+        return { ...item, quantity: newQuantity }
+      })
       localStorage.setItem('guestCart', JSON.stringify(updated))
       setItems(updated)
     } else {
@@ -167,7 +207,8 @@ export default function CartSidebar({ isOpen, onClose }) {
         await cartService.updateQuantity({ cart_item_id: id, quantity: newQuantity })
         loadCart()
       } catch (error) {
-        console.error('Failed to update quantity:', error)
+        const msg = error?.response?.data?.message || error?.message || 'Failed to update quantity.'
+        setCartMessage(msg)
       }
     }
   }
@@ -175,7 +216,7 @@ export default function CartSidebar({ isOpen, onClose }) {
   const handleRemove = async (id) => {
     if (isGuest) {
       const localCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
-      const updated = localCart.filter(item => item.productId !== id)
+      const updated = localCart.filter(item => !(item.productId === id.productId && (item.variantId || null) === (id.variantId || null)))
       localStorage.setItem('guestCart', JSON.stringify(updated))
       setItems(updated)
     } else {
@@ -187,6 +228,16 @@ export default function CartSidebar({ isOpen, onClose }) {
       }
     }
   }
+
+  const hasStockIssues = items.some((item) => {
+    const availableStock =
+      item.available_stock ??
+      item.product_variants?.stock_quantity ??
+      item.availableStock ??
+      null
+    const qty = item.quantity || 0
+    return typeof availableStock === 'number' && qty > availableStock
+  })
 
   const cartCount = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
   const subtotal = items.reduce((sum, item) => {
@@ -260,6 +311,16 @@ export default function CartSidebar({ isOpen, onClose }) {
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-6">
+          {cartMessage ? (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-sm">
+              {cartMessage}
+            </div>
+          ) : null}
+          {hasStockIssues ? (
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded-sm">
+              Some items exceed available stock. Please reduce quantities before checkout.
+            </div>
+          ) : null}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -295,9 +356,19 @@ export default function CartSidebar({ isOpen, onClose }) {
               <span className="text-sm text-gray-600">Subtotal</span>
               <span className="text-lg font-semibold text-gray-900">${subtotal.toFixed(2)}</span>
             </div>
-            <Link to="/checkout" onClick={onClose} className="block w-full bg-gray-900 text-white text-center py-3 text-sm font-medium hover:bg-gray-700">
-              Checkout
-            </Link>
+            {hasStockIssues ? (
+              <button
+                type="button"
+                disabled
+                className="block w-full bg-gray-200 text-gray-400 text-center py-3 text-sm font-medium cursor-not-allowed"
+              >
+                Fix quantities to checkout
+              </button>
+            ) : (
+              <Link to="/checkout" onClick={onClose} className="block w-full bg-gray-900 text-white text-center py-3 text-sm font-medium hover:bg-gray-700">
+                Checkout
+              </Link>
+            )}
             <button onClick={onClose} className="block w-full text-center text-sm text-gray-500 hover:text-gray-900 mt-3">
               Continue Shopping
             </button>

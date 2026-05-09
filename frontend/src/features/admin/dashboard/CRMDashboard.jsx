@@ -98,7 +98,7 @@ export default function CRMDashboard() {
             {d.recent_orders.map((o) => (
               <div
                 key={o.order_id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3"
+                className="flex items-center justify-between gap-4 rounded-[1.05rem] border border-[rgba(var(--velore-border-soft),0.92)] bg-[rgba(var(--velore-pearl),0.85)] px-4 py-3.5 crm-hover-lift"
               >
                 <div className="min-w-0">
                   <div className="text-sm font-semibold truncate">{o.user || '—'}</div>

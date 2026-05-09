@@ -1,28 +1,29 @@
 export default function CRMStatCard({ label, value, hint, icon: Icon, accent = 'teal' }) {
   const accentClass =
     accent === 'sky'
-      ? 'bg-sky-50 text-sky-700'
+      ? 'bg-[rgba(14,165,233,0.08)] text-sky-800 border border-sky-200/60'
       : accent === 'amber'
-        ? 'bg-amber-50 text-amber-700'
+        ? 'bg-[rgba(245,158,11,0.09)] text-amber-900 border border-amber-200/60'
         : accent === 'rose'
-          ? 'bg-rose-50 text-rose-700'
-          : 'bg-teal-50 text-teal-700'
+          ? 'bg-[rgba(244,63,94,0.07)] text-rose-900 border border-rose-200/60'
+          : 'bg-[rgba(var(--velore-accent),0.1)] text-[rgb(var(--velore-fg))] border border-[rgba(var(--velore-ring),0.22)]'
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5">
+    <div className="crm-card-luxury p-5 sm:p-6 crm-hover-lift">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs uppercase tracking-widest text-slate-500">{label}</div>
-          <div className="mt-2 text-2xl font-semibold tracking-tight">{value}</div>
-          {hint ? <div className="mt-2 text-xs text-slate-600">{hint}</div> : null}
+          <div className="crm-eyebrow text-[10px] mb-2">{label}</div>
+          <div className="text-2xl sm:text-[1.65rem] font-semibold tracking-tight text-[rgb(var(--velore-fg))] tabular-nums">
+            {value}
+          </div>
+          {hint ? <div className="mt-2 text-xs text-[rgba(var(--velore-fg),0.55)] leading-relaxed">{hint}</div> : null}
         </div>
         {Icon ? (
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accentClass}`}>
-            <Icon className="w-5 h-5" />
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${accentClass}`}>
+            <Icon className="w-5 h-5" aria-hidden />
           </div>
         ) : null}
       </div>
     </div>
   )
 }
-

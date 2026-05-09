@@ -2,19 +2,19 @@ import { AlertTriangle } from 'lucide-react'
 
 export default function CRMErrorState({ title = 'Something went wrong', message, onRetry }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6">
-      <div className="flex items-start gap-4">
-        <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-          <AlertTriangle className="w-5 h-5" />
+    <div className="crm-panel-solid p-6 sm:p-8 border-rose-200/80 bg-rose-50/35">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-rose-100 border border-rose-200/90 text-rose-700 flex items-center justify-center shrink-0">
+          <AlertTriangle className="w-6 h-6" aria-hidden />
         </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold">{title}</div>
-          {message ? <div className="text-sm text-slate-600 mt-1">{message}</div> : null}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-[rgb(var(--velore-fg))]">{title}</div>
+          {message ? <div className="text-sm text-[rgba(var(--velore-fg),0.68)] mt-1.5 leading-relaxed">{message}</div> : null}
           {onRetry ? (
             <button
               type="button"
               onClick={onRetry}
-              className="mt-4 inline-flex items-center rounded-xl bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 transition-colors"
+              className="mt-5 crm-btn-primary"
             >
               Retry
             </button>
@@ -24,4 +24,3 @@ export default function CRMErrorState({ title = 'Something went wrong', message,
     </div>
   )
 }
-

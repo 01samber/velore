@@ -115,6 +115,16 @@ const adminController = {
     }
   },
 
+  async getProduct(req, res) {
+    try {
+      const data = await adminService.getAdminProductById(req.params.id)
+      return jsonSuccess(res, data)
+    } catch (error) {
+      const status = error.message === 'Product not found' ? 404 : 500
+      return jsonError(res, status, error.message)
+    }
+  },
+
   async toggleProductStatus(req, res) {
     try {
       const data = await adminService.toggleProductStatus(req.admin.adminId, req.params.productId)

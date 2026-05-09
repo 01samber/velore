@@ -272,6 +272,7 @@ const adminService = {
         include: {
           brands: { select: { name: true } },
           categories: { select: { name: true } },
+          product_variants: { select: { stock_quantity: true, images: true } },
           _count: { select: { product_variants: true } }
         }
       }),
@@ -287,9 +288,73 @@ const adminService = {
         category: p.categories?.name,
         is_active: p.is_active,
         variants_count: p._count.product_variants,
+        total_stock: (p.product_variants || []).reduce((sum, v) => sum + Number(v.stock_quantity || 0), 0),
+        thumbnail: (p.product_variants || []).flatMap(v => (Array.isArray(v.images) ? v.images : [])).find(Boolean) || null,
         created_at: p.created_at
       })),
       pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) }
+    }
+  },
+
+  async getAdminProductById(productId) {
+    const id = Number(productId)
+    if (!Number.isInteger(id) || id < 1) throw new Error('Product not found')
+
+    const product = await prisma.products.findUnique({
+      where: { product_id: id },
+      include: {
+        brands: { select: { brand_id: true, name: true } },
+        categories: { select: { category_id: true, name: true } },
+        product_variants: {
+          orderBy: { created_at: 'desc' },
+          select: {
+            variant_id: true,
+            sku: true,
+            color_name: true,
+            color_hex: true,
+            size: true,
+            price_adjustment: true,
+            stock_quantity: true,
+            low_stock_alert: true,
+            images: true,
+            created_at: true,
+            updated_at: true,
+          }
+        }
+      }
+    })
+
+    if (!product) throw new Error('Product not found')
+
+    return {
+      product_id: product.product_id.toString(),
+      name: product.name,
+      description: product.description,
+      price: product.price?.toString?.() ?? product.price,
+      compare_price: product.compare_price?.toString?.() ?? product.compare_price ?? null,
+      category_id: product.category_id?.toString?.() ?? String(product.category_id),
+      brand_id: product.brand_id?.toString?.() ?? String(product.brand_id),
+      frame_shape: product.frame_shape,
+      face_shape: product.face_shape,
+      gender: product.gender,
+      material: product.material,
+      prescription_ready: product.prescription_ready,
+      virtual_try_on: product.virtual_try_on,
+      is_active: product.is_active,
+      is_bundle: product.is_bundle,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      brands: product.brands
+        ? { brand_id: product.brands.brand_id.toString(), name: product.brands.name }
+        : null,
+      categories: product.categories
+        ? { category_id: product.categories.category_id.toString(), name: product.categories.name }
+        : null,
+      product_variants: (product.product_variants || []).map(v => ({
+        ...v,
+        variant_id: v.variant_id.toString(),
+        price_adjustment: v.price_adjustment?.toString?.() ?? v.price_adjustment,
+      }))
     }
   },
 

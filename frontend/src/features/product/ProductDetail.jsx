@@ -183,6 +183,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
   const [justAdded, setJustAdded] = useState(false)
+  const [stockMessage, setStockMessage] = useState('')
+  const [cartError, setCartError] = useState('')
   // ✅ Track selected variant
   const [selectedVariant, setSelectedVariant] = useState(null)
 
@@ -202,6 +204,14 @@ export default function ProductDetail() {
   useEffect(() => {
     loadProduct()
   }, [id])
+
+  useEffect(() => {
+    const stockQty = selectedVariant?.stock_quantity
+    if (typeof stockQty === 'number' && stockQty >= 0) {
+      if (stockQty === 0) setQuantity(1)
+      else if (quantity > stockQty) setQuantity(stockQty)
+    }
+  }, [selectedVariant, quantity])
 
   const loadProduct = async () => {
     setLoading(true)
@@ -236,6 +246,7 @@ export default function ProductDetail() {
 const handleAddToCart = async () => {
   const productId = product.product_id
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  setCartError('')
 
   if (token) {
     setAddingToCart(true)
@@ -249,24 +260,43 @@ const handleAddToCart = async () => {
       setJustAdded(true)
       setTimeout(() => setJustAdded(false), 1200)
     } catch (error) {
-      console.error('Failed to add to cart:', error)
+      const msg = error?.response?.data?.message || error?.message || 'Failed to add to cart.'
+      setCartError(msg)
     } finally {
       setAddingToCart(false)
     }
   } else {
     const localCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
-    const existing = localCart.find(item => item.productId === productId)
+    const variantId = selectedVariant?.variant_id || null
+    const stockQty = selectedVariant?.stock_quantity
+    const maxQty = typeof stockQty === 'number' ? stockQty : null
+    if (maxQty !== null && quantity > maxQty) {
+      setCartError(`Only ${maxQty} units available for ${product.name}.`)
+      return
+    }
+
+    const existing = localCart.find(item => item.productId === productId && (item.variantId || null) === (variantId || null))
     if (existing) {
-      existing.quantity += quantity
+      const nextQty = existing.quantity + quantity
+      if (maxQty !== null && nextQty > maxQty) {
+        setCartError(`Only ${maxQty} units available for ${product.name}.`)
+        existing.quantity = maxQty
+      } else {
+        existing.quantity = nextQty
+      }
       existing.prescriptionData = prescription
+      existing.variantId = variantId
+      existing.availableStock = maxQty
     } else {
       const firstImage = product.product_variants?.[0]?.images?.[0] || null
       localCart.push({
         productId,
+        variantId,
         name: product.name,
         price: product.price,
         image: firstImage || '',
         quantity,
+        availableStock: maxQty,
         prescriptionData: prescription,
       })
     }
@@ -301,6 +331,8 @@ const handleAddToCart = async () => {
 
   // ✅ Stock from selected variant
   const stockQty = selectedVariant?.stock_quantity ?? null
+  const canAdd = stockQty === null ? true : stockQty > 0
+  const maxQty = stockQty === null ? null : Math.max(0, Number(stockQty))
 
   // Category-aware flags
   const categoryName = product.categories?.name?.toLowerCase()
@@ -447,6 +479,17 @@ const handleAddToCart = async () => {
             </p>
           )}
 
+          {stockMessage ? (
+            <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 px-3 py-2">
+              {stockMessage}
+            </div>
+          ) : null}
+          {cartError ? (
+            <div className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2">
+              {cartError}
+            </div>
+          ) : null}
+
           {/* ✅ Badges */}
           <div className="flex gap-2 flex-wrap">
             {product.prescription_ready && (
@@ -516,13 +559,34 @@ const handleAddToCart = async () => {
           {/* Add to Cart */}
           <div className="flex items-center gap-4 pt-2 border-t border-gray-200">
             <div className="flex border border-gray-300">
-              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-600 hover:bg-gray-100">−</button>
+              <button
+                onClick={() => {
+                  setStockMessage('')
+                  setQuantity(q => Math.max(1, q - 1))
+                }}
+                className="px-3 py-2 text-gray-600 hover:bg-gray-100"
+              >
+                −
+              </button>
               <span className="px-4 py-2 text-sm">{quantity}</span>
-              <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-600 hover:bg-gray-100">+</button>
+              <button
+                onClick={() => {
+                  setStockMessage('')
+                  if (maxQty !== null && quantity >= maxQty) {
+                    setStockMessage(`Only ${maxQty} left.`)
+                    return
+                  }
+                  setQuantity(q => q + 1)
+                }}
+                className="px-3 py-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                disabled={maxQty !== null && quantity >= maxQty}
+              >
+                +
+              </button>
             </div>
             <button
               onClick={handleAddToCart}
-              disabled={addingToCart || stockQty === 0}
+              disabled={addingToCart || !canAdd}
               className="flex-1 bg-black text-white py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400"
             >
               {addingToCart ? 'Adding...' : justAdded ? (
@@ -530,7 +594,7 @@ const handleAddToCart = async () => {
                   <Check size={16} aria-hidden="true" />
                   Added
                 </span>
-              ) : stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
+              ) : !canAdd ? 'Out of Stock' : 'Add to cart'}
             </button>
           </div>
         </div>
