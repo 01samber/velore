@@ -38,30 +38,39 @@ export default function CRMBlogs() {
           const url = resolveImageUrl(b.image)
           return (
             <div className="flex items-center gap-3 min-w-[320px]">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-[rgba(var(--velore-accent),0.06)] border border-[rgba(var(--velore-border-soft),0.95)] overflow-hidden flex items-center justify-center ring-1 ring-[rgba(var(--velore-border-soft),0.45)]">
                 {url ? (
                   <img
                     src={url}
                     alt=""
                     className="w-full h-full object-cover"
+                    loading="lazy"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none'
                     }}
                   />
                 ) : (
-                  <ImageOff className="w-5 h-5 text-slate-400" />
+                  <ImageOff className="w-5 h-5 text-[rgba(var(--velore-fg),0.38)]" />
                 )}
               </div>
               <div className="min-w-0">
                 <div className="font-semibold truncate">{b.title}</div>
-                <div className="text-xs text-slate-500 truncate">{b.slug}</div>
+                <div className="text-xs text-[rgba(var(--velore-fg),0.52)] truncate">{b.slug}</div>
               </div>
             </div>
           )
         },
       },
-      { key: 'category', header: 'Category', cell: (b) => <span className="text-slate-700">{b.category || '—'}</span> },
-      { key: 'author', header: 'Author', cell: (b) => <span className="text-slate-700">{b.author || '—'}</span> },
+      {
+        key: 'category',
+        header: 'Category',
+        cell: (b) => <span className="text-[rgba(var(--velore-fg),0.78)]">{b.category || '—'}</span>,
+      },
+      {
+        key: 'author',
+        header: 'Author',
+        cell: (b) => <span className="text-[rgba(var(--velore-fg),0.78)]">{b.author || '—'}</span>,
+      },
       {
         key: 'is_published',
         header: 'Status',
@@ -74,7 +83,11 @@ export default function CRMBlogs() {
       {
         key: 'published_at',
         header: 'Published',
-        cell: (b) => <span className="text-slate-700">{b.published_at ? new Date(b.published_at).toLocaleDateString() : '—'}</span>,
+        cell: (b) => (
+          <span className="text-[rgba(var(--velore-fg),0.72)]">
+            {b.published_at ? new Date(b.published_at).toLocaleDateString() : '—'}
+          </span>
+        ),
       },
     ],
     []

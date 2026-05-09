@@ -160,18 +160,26 @@ export default function CRMReviews() {
         title="Review moderation"
         subtitle="Approve/reject pending reviews. Approved list is public data."
         right={
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
+          <div className="inline-flex rounded-[0.85rem] border border-[rgba(var(--velore-border-soft),0.95)] bg-[rgba(var(--velore-pearl),0.88)] p-1 shadow-sm">
             <button
               type="button"
               onClick={() => setTab('pending')}
-              className={`px-3 py-2 text-sm rounded-lg ${tab === 'pending' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+              className={`px-3 py-2 text-sm rounded-[0.65rem] font-medium transition-colors duration-[180ms] ${
+                tab === 'pending'
+                  ? 'bg-[rgb(var(--velore-fg))] text-white shadow-sm'
+                  : 'text-[rgba(var(--velore-fg),0.72)] hover:bg-[rgba(var(--velore-accent),0.07)]'
+              }`}
             >
               Pending
             </button>
             <button
               type="button"
               onClick={() => setTab('approved')}
-              className={`px-3 py-2 text-sm rounded-lg ${tab === 'approved' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+              className={`px-3 py-2 text-sm rounded-[0.65rem] font-medium transition-colors duration-[180ms] ${
+                tab === 'approved'
+                  ? 'bg-[rgb(var(--velore-fg))] text-white shadow-sm'
+                  : 'text-[rgba(var(--velore-fg),0.72)] hover:bg-[rgba(var(--velore-accent),0.07)]'
+              }`}
             >
               Approved
             </button>

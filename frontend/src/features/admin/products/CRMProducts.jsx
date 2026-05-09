@@ -71,13 +71,21 @@ export default function CRMProducts() {
             )}
             <div className="min-w-0">
               <div className="font-semibold truncate">{p.name}</div>
-              <div className="text-xs text-slate-500 truncate">#{p.id}</div>
+              <div className="text-xs text-[rgba(var(--velore-fg),0.52)] truncate">#{p.id}</div>
             </div>
           </div>
         ),
       },
-      { key: 'brand', header: 'Brand', cell: (p) => <span className="text-slate-700">{p.brand || '—'}</span> },
-      { key: 'category', header: 'Category', cell: (p) => <span className="text-slate-700">{p.category || '—'}</span> },
+      {
+        key: 'brand',
+        header: 'Brand',
+        cell: (p) => <span className="text-[rgba(var(--velore-fg),0.78)]">{p.brand || '—'}</span>,
+      },
+      {
+        key: 'category',
+        header: 'Category',
+        cell: (p) => <span className="text-[rgba(var(--velore-fg),0.78)]">{p.category || '—'}</span>,
+      },
       {
         key: 'price',
         header: 'Price',
@@ -86,7 +94,7 @@ export default function CRMProducts() {
       {
         key: 'variants_count',
         header: 'Variants',
-        cell: (p) => <span className="text-slate-700 tabular-nums">{p.variants_count ?? '—'}</span>,
+        cell: (p) => <span className="text-[rgba(var(--velore-fg),0.78)] tabular-nums">{p.variants_count ?? '—'}</span>,
       },
       {
         key: 'total_stock',
@@ -96,7 +104,7 @@ export default function CRMProducts() {
           const low = stock > 0 && stock <= 5
           return (
             <div className="flex items-center gap-2">
-              <span className="text-slate-800 tabular-nums font-semibold">{stock}</span>
+              <span className="text-[rgb(var(--velore-fg))] tabular-nums font-semibold">{stock}</span>
               {low ? <CRMStatusBadge tone="warning">Low</CRMStatusBadge> : null}
             </div>
           )
@@ -161,7 +169,7 @@ export default function CRMProducts() {
   )
 
   const paginationUi = state.pagination ? (
-    <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
+    <div className="flex items-center justify-between gap-3 text-xs text-[rgba(var(--velore-fg),0.58)]">
       <div>
         Page <span className="font-semibold">{state.pagination.page}</span> of{' '}
         <span className="font-semibold">{state.pagination.pages}</span> ·{' '}

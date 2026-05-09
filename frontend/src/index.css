@@ -309,6 +309,13 @@
     padding-right: 2.25rem;
   }
 
+  .crm-select-sm {
+    padding: 0.35rem 2rem 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    border-radius: 0.75rem;
+    background-position: right 0.55rem center;
+  }
+
   .crm-table-wrap {
     overflow-x: auto;
     border-radius: 1rem;

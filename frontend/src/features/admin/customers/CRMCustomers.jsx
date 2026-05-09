@@ -125,7 +125,7 @@ export default function CRMCustomers() {
   )
 
   const paginationUi = state.pagination ? (
-    <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
+    <div className="flex items-center justify-between gap-3 text-xs text-[rgba(var(--velore-fg),0.58)]">
       <div>
         Page <span className="font-semibold">{state.pagination.page}</span> of{' '}
         <span className="font-semibold">{state.pagination.pages}</span> ·{' '}
@@ -134,7 +134,7 @@ export default function CRMCustomers() {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          className="crm-btn-secondary px-3 py-2 disabled:opacity-45"
           disabled={state.pagination.page <= 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
         >
@@ -142,7 +142,7 @@ export default function CRMCustomers() {
         </button>
         <button
           type="button"
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          className="crm-btn-secondary px-3 py-2 disabled:opacity-45"
           disabled={state.pagination.page >= state.pagination.pages}
           onClick={() => setPage((p) => p + 1)}
         >

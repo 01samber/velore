@@ -40,14 +40,14 @@ export default function CRMOrders() {
 
   const columns = useMemo(
     () => [
-      { key: 'id', header: 'Order', cell: (o) => <span className="font-mono text-slate-800">#{o.id}</span> },
+      { key: 'id', header: 'Order', cell: (o) => <span className="font-mono text-[rgb(var(--velore-fg))]">#{o.id}</span> },
       {
         key: 'user',
         header: 'Customer',
         cell: (o) => (
           <div className="min-w-[220px]">
             <div className="font-semibold">{o.user?.name || '—'}</div>
-            <div className="text-xs text-slate-500">{o.user?.email || ''}</div>
+            <div className="text-xs text-[rgba(var(--velore-fg),0.52)]">{o.user?.email || ''}</div>
           </div>
         ),
       },
@@ -62,15 +62,17 @@ export default function CRMOrders() {
         header: 'Payment',
         cell: (o) => (
           <div className="text-xs">
-            <div className="text-slate-700">{o.payment?.payment_meth || '—'}</div>
-            <div className="text-slate-500">{o.payment?.status || ''}</div>
+            <div className="text-[rgba(var(--velore-fg),0.78)]">{o.payment?.payment_meth || '—'}</div>
+            <div className="text-[rgba(var(--velore-fg),0.52)]">{o.payment?.status || ''}</div>
           </div>
         ),
       },
       {
         key: 'date',
         header: 'Date',
-        cell: (o) => <span className="text-slate-700">{o.date ? new Date(o.date).toLocaleDateString() : '—'}</span>,
+        cell: (o) => (
+          <span className="text-[rgba(var(--velore-fg),0.72)]">{o.date ? new Date(o.date).toLocaleDateString() : '—'}</span>
+        ),
       },
       {
         key: 'status',
@@ -95,7 +97,7 @@ export default function CRMOrders() {
                   setUpdatingId(null)
                 }
               }}
-              className="text-xs rounded-xl border border-slate-200 bg-white px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-200"
+              className="crm-select crm-select-sm max-w-[10rem]"
             >
               {ORDER_STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -111,7 +113,7 @@ export default function CRMOrders() {
   )
 
   const paginationUi = state.pagination ? (
-    <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
+    <div className="flex items-center justify-between gap-3 text-xs text-[rgba(var(--velore-fg),0.58)]">
       <div>
         Page <span className="font-semibold">{state.pagination.page}</span> of{' '}
         <span className="font-semibold">{state.pagination.pages}</span> ·{' '}
@@ -120,7 +122,7 @@ export default function CRMOrders() {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          className="crm-btn-secondary px-3 py-2 disabled:opacity-45"
           disabled={state.pagination.page <= 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
         >
@@ -128,7 +130,7 @@ export default function CRMOrders() {
         </button>
         <button
           type="button"
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+          className="crm-btn-secondary px-3 py-2 disabled:opacity-45"
           disabled={state.pagination.page >= state.pagination.pages}
           onClick={() => setPage((p) => p + 1)}
         >
@@ -152,7 +154,7 @@ export default function CRMOrders() {
               setPage(1)
               setStatus(e.target.value)
             }}
-            className="text-sm rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="crm-select min-w-[11rem]"
           >
             <option value="">All statuses</option>
             {ORDER_STATUSES.map((s) => (

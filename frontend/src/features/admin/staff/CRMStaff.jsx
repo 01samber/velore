@@ -76,7 +76,7 @@ export default function CRMStaff() {
 
       <CRMSectionCard title="Create staff admin" subtitle="Creates a new admin account (Super Admin only).">
         {createError ? (
-          <div className="mb-4 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
+          <div className="mb-4 text-sm text-rose-900 bg-rose-50/95 border border-rose-200/90 rounded-[1.05rem] px-4 py-3 shadow-sm">
             {createError}
           </div>
         ) : null}
@@ -86,25 +86,25 @@ export default function CRMStaff() {
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             placeholder="Email"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="crm-input"
           />
           <input
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             placeholder="Name (optional)"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="crm-input"
           />
           <input
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             placeholder="Password"
             type="password"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="crm-input"
           />
           <select
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="crm-select"
           >
             <option value="staff_admin">staff_admin</option>
             <option value="super_admin">super_admin</option>

@@ -53,7 +53,7 @@ export default function CRMInventory() {
             )}
             <div className="min-w-0">
               <div className="font-semibold truncate">{p.name}</div>
-              <div className="text-xs text-slate-500 truncate">#{p.id}</div>
+              <div className="text-xs text-[rgba(var(--velore-fg),0.52)] truncate">#{p.id}</div>
             </div>
           </div>
         )
